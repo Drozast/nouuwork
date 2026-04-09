@@ -1,0 +1,154 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const { GoogleGenAI } = require('@google/genai');
+const cors = require('cors')({ origin: true });
+const express = require('express');
+
+admin.initializeApp();
+
+const app = express();
+app.use((req, res, next) => cors(req, res, next));
+app.use(express.json());
+
+const getGemini = () => new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || '',
+});
+
+const SYSTEM_PROMPTS = {
+  cv: `Eres un asistente de IA para NouuWork, la plataforma de empleos formales de Chile.
+Tu objetivo es ayudar a personas a crear su CV de forma conversacional.
+Haz preguntas UNA POR UNA. Empieza preguntando el nombre si no lo dieron.
+Luego experiencia laboral más reciente, educación, habilidades, etc.
+Sé amable, empático, usa lenguaje sencillo y coloquial pero profesional.
+Mantén respuestas cortas como en WhatsApp.`,
+
+  map: `Eres un asistente de IA para NouuWork, la plataforma de empleos formales de Chile.
+Tu objetivo es ayudar al usuario a encontrar trabajo en el mapa.
+Usa los trabajos disponibles en el contexto JSON provisto.
+Ayuda al usuario a elegir el mejor trabajo según habilidades, ubicación o preferencias.
+No inventes trabajos que no estén en la lista. Sé amable y usa lenguaje sencillo.`,
+
+  interview: `Eres un coach de entrevistas laborales para NouuWork, la plataforma de empleos formales.
+Ayuda al usuario a prepararse para su entrevista de trabajo.
+Hazle preguntas de práctica UNA POR UNA y da feedback constructivo y sencillo.
+Usa lenguaje claro, motivador y cercano.`,
+
+  b2b: `Eres un asistente de reclutamiento para NouuWork B2B.
+Ayudas a empresas a evaluar candidatos para puestos de trabajo.
+Analiza perfiles, sugiere preguntas de entrevista, y da recomendaciones objetivas.
+Sé profesional y directo.`,
+};
+
+const SEED_JOBS = [
+  { id: 1, title: 'Cajero/a', company: 'Supermercado Lider', location: 'Av. Providencia 2653, Providencia', salary: '$450.000 - $550.000', time: 'Hace 2 horas', tags: ['Atención al cliente', 'Manejo de dinero'], urgent: true, coords: [-33.418, -70.605], active: true },
+  { id: 2, title: 'Reponedor/a', company: 'Jumbo', location: 'Av. Kennedy 9001, Las Condes', salary: '$420.000 - $480.000', time: 'Hace 5 horas', tags: ['Orden', 'Fuerza física'], coords: [-33.39, -70.546], active: true },
+  { id: 3, title: 'Mesero/a', company: 'Restaurant El Huerto', location: 'Orrego Luco 054, Providencia', salary: '$350.000 + propinas', time: 'Hace 1 día', tags: ['Atención al cliente', 'Buena presencia'], coords: [-33.423, -70.611], active: true },
+  { id: 4, title: 'Bodeguero/a', company: 'Distribuidora Central', location: 'Av. Vicuña Mackenna 1290, Ñuñoa', salary: '$480.000 - $550.000', time: 'Hace 3 horas', tags: ['Orden', 'Inventario'], urgent: true, coords: [-33.456, -70.625], active: true },
+  { id: 5, title: 'Guardia de Seguridad', company: 'Securitas', location: 'Av. Los Leones 1200, Providencia', salary: '$500.000 - $600.000', time: 'Hace 4 horas', tags: ['Seguridad', 'Turnos rotativos'], coords: [-33.435, -70.600], active: true },
+  { id: 6, title: 'Auxiliar de Aseo', company: 'ISS Chile', location: 'Rosario Norte 532, Las Condes', salary: '$400.000 - $450.000', time: 'Hace 1 día', tags: ['Limpieza', 'Responsabilidad'], coords: [-33.405, -70.570], active: true },
+  { id: 7, title: 'Operador/a Call Center', company: 'Teleperformance', location: 'Av. Apoquindo 4501, Las Condes', salary: '$450.000 + bonos', time: 'Hace 6 horas', tags: ['Atención al cliente', 'Computación'], coords: [-33.415, -70.585], active: true },
+  { id: 8, title: 'Repartidor/a', company: 'Correos de Chile', location: 'Exposición 221, Estación Central', salary: '$480.000 - $520.000', time: 'Hace 2 días', tags: ['Licencia B', 'Rutas'], urgent: true, coords: [-33.450, -70.680], active: true },
+  { id: 9, title: 'Ayudante de Cocina', company: 'Starbucks', location: 'Pedro de Valdivia 100, Providencia', salary: '$380.000 - $420.000', time: 'Hace 1 hora', tags: ['Cocina', 'Rapidez'], coords: [-33.425, -70.615], active: true },
+  { id: 10, title: 'Vendedor/a Retail', company: 'Falabella', location: 'Costanera Center, Providencia', salary: '$400.000 + comisiones', time: 'Hace 3 días', tags: ['Ventas', 'Atención al cliente'], coords: [-33.417, -70.606], active: true },
+  { id: 11, title: 'Reponedor/a', company: 'Santa Isabel', location: 'Av. Irarrázaval 2800, Ñuñoa', salary: '$400.000 - $450.000', time: 'Hace 1 hora', tags: ['Orden', 'Fuerza física'], coords: [-33.453, -70.598], active: true },
+  { id: 12, title: 'Reponedor/a Nocturno', company: 'Tottus', location: 'Av. Vitacura 6200, Vitacura', salary: '$450.000 - $500.000', time: 'Hace 4 horas', tags: ['Orden', 'Nocturno'], coords: [-33.395, -70.575], active: true },
+];
+
+// Auth middleware (optional — doesn't block, just attaches uid)
+const attachUser = async (req, res, next) => {
+  const header = req.headers.authorization;
+  if (header && header.startsWith('Bearer ')) {
+    try {
+      const decoded = await admin.auth().verifyIdToken(header.split('Bearer ')[1]);
+      req.user = decoded;
+    } catch (_) { /* ignore */ }
+  }
+  next();
+};
+app.use(attachUser);
+
+// POST /chat
+app.post('/chat', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { message, sessionType = 'cv', context, history = [] } = req.body;
+  if (!message) return res.status(400).json({ error: 'message requerido' });
+
+  try {
+    const ai = getGemini();
+    const systemInstruction = SYSTEM_PROMPTS[sessionType] + (context ? `\n\nContexto:\n${context}` : '');
+    const chat = ai.chats.create({
+      model: 'gemini-2.5-flash',
+      config: { systemInstruction, temperature: 0.7 },
+      history: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
+    });
+    const result = await chat.sendMessage({ message });
+    res.json({ text: result.text });
+  } catch (err) {
+    console.error('Chat error:', err);
+    res.status(500).json({ error: 'Error en el asistente IA' });
+  }
+});
+
+// POST /extract-cv
+app.post('/extract-cv', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { chatHistory } = req.body;
+  if (!chatHistory) return res.status(400).json({ error: 'chatHistory requerido' });
+
+  try {
+    const ai = getGemini();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Extrae la información del siguiente historial de chat para armar un CV.
+Devuelve SOLO un JSON válido con esta estructura (vacío si no hay info):
+{"name":"","email":"","phone":"","location":"","experience":"","education":"","skills":"","languages":""}
+
+Historial:
+${chatHistory}`,
+      config: { responseMimeType: 'application/json', temperature: 0.1 },
+    });
+    res.json(JSON.parse(response.text || '{}'));
+  } catch (err) {
+    console.error('Extract CV error:', err);
+    res.status(500).json({ error: 'Error extrayendo CV' });
+  }
+});
+
+// GET /jobs
+app.get('/jobs', async (req, res) => {
+  try {
+    const snap = await admin.firestore().collection('jobs').where('active', '==', true).get();
+    if (snap.empty) return res.json(SEED_JOBS);
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (_) {
+    res.json(SEED_JOBS);
+  }
+});
+
+// POST /ai-summary
+app.post('/ai-summary', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { candidate, jobTitle } = req.body;
+  if (!candidate || !jobTitle) return res.status(400).json({ error: 'candidate y jobTitle requeridos' });
+
+  try {
+    const ai = getGemini();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Resume en 2-3 oraciones por qué este candidato es o no adecuado para "${jobTitle}". Sé directo.
+
+Candidato: ${candidate.name} | Score: ${candidate.score}%
+Experiencia: ${candidate.experience}
+Educación: ${candidate.education}
+Habilidades: ${(candidate.tags || []).join(', ')}
+Notas: ${candidate.notes}`,
+      config: { temperature: 0.3 },
+    });
+    res.json({ summary: response.text });
+  } catch (err) {
+    console.error('AI summary error:', err);
+    res.status(500).json({ error: 'Error generando resumen' });
+  }
+});
+
+exports.api = functions.https.onRequest(app);

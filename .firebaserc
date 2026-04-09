@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "nouu-work-2026"
+  },
+  "targets": {
+    "nouu-work-2026": {
+      "hosting": {
+        "default": [
+          "nouu-work-2026"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

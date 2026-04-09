@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #ff3c59;
+  --color-primary-hover: #e62545;
+  --color-secondary: #13151a;
+  --color-secondary-light: #1e2028;
+  --color-highlight: #ffaa02;
+  --color-card: #212121;
+  --color-border: #2d2d2d;
+  --color-muted: #8b8b8b;
+  --color-info: #0077c8;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: var(--color-secondary);
+  color: white;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Light mode overrides */
+[data-theme="light"] body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+[data-theme="light"] .bg-\[\#16171a\] {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .bg-\[\#222327\] {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .bg-\[\#2a2b30\] {
+  background-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .bg-\[\#1e1f23\] {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] .border-gray-800 {
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .border-gray-700 {
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .text-gray-400 {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .text-gray-300 {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .text-gray-200 {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .text-white {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] header.bg-\[\#16171a\] {
+  background-color: #ffffff !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* Leaflet popup - dark always */
+.custom-popup .leaflet-popup-content-wrapper {
+  background: #222327;
+  color: white;
+  border-radius: 12px;
+  padding: 0;
+  border: 1px solid #374151;
+}
+.custom-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+}
+.custom-popup .leaflet-popup-tip {
+  background: #222327;
+  border-top: 1px solid #374151;
+  border-left: 1px solid #374151;
+}
+.custom-popup .leaflet-popup-close-button {
+  color: #9ca3af !important;
+  padding: 8px !important;
+}
