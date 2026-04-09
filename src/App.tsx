@@ -147,6 +147,8 @@ const CVGenerator = () => {
   const [input, setInput] = useState("");
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [progress, setProgress] = useState(0);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -169,10 +171,8 @@ const CVGenerator = () => {
   const updateCVPreview = async (chatHistory: string) => {
     const data = await extractCVData(chatHistory);
     setCvData(data as unknown as CVData);
-    
-    // Calculate progress based on filled fields
     let filled = 0;
-    const totalFields = 8; // name, email, phone, location, experience, education, skills, languages
+    const totalFields = 8;
     if (data.name) filled++;
     if (data.email) filled++;
     if (data.phone) filled++;
@@ -181,7 +181,6 @@ const CVGenerator = () => {
     if (data.education) filled++;
     if (data.skills) filled++;
     if (data.languages) filled++;
-    
     setProgress(Math.round((filled / totalFields) * 100));
   };
 
@@ -190,6 +189,51 @@ const CVGenerator = () => {
     const userMessage = input.trim();
     setInput("");
     await sendMessage(userMessage);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setUploadLoading(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '';
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_BASE}/api/parse-cv-file`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Error procesando archivo');
+      const data = await res.json();
+
+      // Build a natural summary to inject into the chat
+      const parts: string[] = [];
+      if (data.name) parts.push(`Mi nombre es ${data.name}.`);
+      if (data.email) parts.push(`Mi email es ${data.email}.`);
+      if (data.phone) parts.push(`Mi teléfono es ${data.phone}.`);
+      if (data.location) parts.push(`Vivo en ${data.location}.`);
+      if (data.experience) parts.push(`Mi experiencia laboral: ${data.experience}.`);
+      if (data.education) parts.push(`Mi educación: ${data.education}.`);
+      if (data.skills) parts.push(`Mis habilidades: ${data.skills}.`);
+      if (data.languages) parts.push(`Idiomas: ${data.languages}.`);
+      if (data.summary) parts.push(`Resumen profesional: ${data.summary}.`);
+
+      const summary = parts.length > 0
+        ? `Adjunté mi CV. Aquí está mi información: ${parts.join(' ')}`
+        : 'Adjunté mi CV pero no pude extraer la información. ¿Me ayudas completando los datos?';
+
+      await sendMessage(summary);
+      // Also update the CV preview panel
+      if (data.name) setCvData(data as unknown as CVData);
+    } catch {
+      await sendMessage('Intenté subir mi CV pero hubo un error. ¿Puedes ayudarme a completarlo manualmente?');
+    } finally {
+      setUploadLoading(false);
+    }
   };
 
   const handleDownload = () => {
@@ -308,6 +352,30 @@ const CVGenerator = () => {
 
           {/* Chat Input */}
           <div className="p-4 border-t border-gray-800 bg-[#1e1f23] shrink-0">
+            {/* Upload button row */}
+            <div className="flex items-center space-x-2 mb-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadLoading || isLoading}
+                className="flex items-center space-x-1.5 text-xs text-gray-400 hover:text-white bg-[#16171a] border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                title="Subir CV existente (PDF o imagen)"
+              >
+                {uploadLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                )}
+                <span>{uploadLoading ? 'Analizando...' : 'Subir CV existente'}</span>
+              </button>
+              <span className="text-[10px] text-gray-600">PDF, JPG o PNG · máx 10MB</span>
+            </div>
             <div className="relative">
               <input
                 type="text"
@@ -316,11 +384,11 @@ const CVGenerator = () => {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Escribe tu respuesta..."
                 className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-[#ff5a5f] transition-colors"
-                disabled={isLoading}
+                disabled={isLoading || uploadLoading}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || uploadLoading}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#ff5a5f]/20 text-[#ff5a5f] rounded-lg hover:bg-[#ff5a5f] hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-[#ff5a5f]/20 disabled:hover:text-[#ff5a5f]"
               >
                 <Send className="w-4 h-4" />

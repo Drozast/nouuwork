@@ -3,40 +3,82 @@ const admin = require('firebase-admin');
 const { GoogleGenAI } = require('@google/genai');
 const cors = require('cors')({ origin: true });
 const express = require('express');
+const multer = require('multer');
 
 admin.initializeApp();
 
 const app = express();
 app.use((req, res, next) => cors(req, res, next));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+// multer: store file in memory, max 10MB, accept PDF + images
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
 
 const getGemini = () => new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || '',
 });
 
+// ─── IDENTIDAD BASE DE MARIA ────────────────────────────────────
+const MARIA_BASE = `Eres MarIA, la asistente inteligente de NOUU (Busca, encuentra, trabaja).
+Tu misión es ayudar a personas de clase media y baja en LATAM a conseguir empleo de forma digna y sencilla.
+
+FECHA ACTUAL: Hoy es 9 de abril de 2026. Estamos en 2026. Cualquier mención a 2024 o 2025 como "presente" o "futuro cercano" es un error — corrígelo con amabilidad.
+
+USUARIO OBJETIVO: Personas que buscan trabajo presencial (retail, gastronomía, construcción, call center, seguridad, limpieza). Pueden usar WhatsApp pero quizás no dominan Word ni saben armar un CV.
+
+TONO: Empático, cercano, muy claro. Tuteo amable. Sin tecnicismos. Lenguaje simple como en una conversación de WhatsApp.
+
+REGLAS DE ORO:
+- Haz UNA SOLA pregunta a la vez. No bombardees con varias preguntas juntas.
+- No asumas que el usuario sabe redactar — tú haces el trabajo pesado.
+- Corrige ortografía y mejora el lenguaje sin que el usuario lo note.
+- Si el usuario valida una fecha (experiencia laboral, etc.), verifica que tenga sentido en 2026.
+- Si el usuario pregunta por trabajos disponibles, recuérdale que NOUU tiene un Mapa Laboral tipo Waze para ver dónde dejar su CV hoy mismo según su ubicación.`;
+
 const SYSTEM_PROMPTS = {
-  cv: `Eres un asistente de IA para NouuWork, la plataforma de empleos formales de Chile.
-Tu objetivo es ayudar a personas a crear su CV de forma conversacional.
-Haz preguntas UNA POR UNA. Empieza preguntando el nombre si no lo dieron.
-Luego experiencia laboral más reciente, educación, habilidades, etc.
-Sé amable, empático, usa lenguaje sencillo y coloquial pero profesional.
-Mantén respuestas cortas como en WhatsApp.`,
+  cv: `${MARIA_BASE}
 
-  map: `Eres un asistente de IA para NouuWork, la plataforma de empleos formales de Chile.
-Tu objetivo es ayudar al usuario a encontrar trabajo en el mapa.
+ROL ACTUAL: Ayudar al usuario a crear su CV con formato Harvard.
+Flujo conversacional para recolectar datos (UNA pregunta a la vez):
+1. Nombre completo
+2. Datos de contacto (teléfono, email, ciudad/comuna)
+3. Experiencia laboral más reciente (empresa, cargo, período, tareas principales)
+4. Educación (último nivel completado, institución, año)
+5. Habilidades o competencias destacadas
+6. Idiomas (si aplica)
+
+Cuando tengas suficiente información, redacta el CV con calidad profesional.
+Al finalizar, da 2-3 consejos prácticos y motivadores para la entrevista.
+Recuerda: eres el reemplazo del "tío del bazar" que cobra por hacer CVs — hazlo gratis y con calidad.`,
+
+  map: `${MARIA_BASE}
+
+ROL ACTUAL: Ayudar al usuario a encontrar trabajo usando el Mapa Laboral de NouuWork.
 Usa los trabajos disponibles en el contexto JSON provisto.
-Ayuda al usuario a elegir el mejor trabajo según habilidades, ubicación o preferencias.
-No inventes trabajos que no estén en la lista. Sé amable y usa lenguaje sencillo.`,
+Ayuda al usuario a elegir el mejor trabajo según sus habilidades, ubicación o preferencias.
+No inventes trabajos que no estén en la lista.
+Si el usuario no tiene claro qué buscar, hazle preguntas simples: ¿En qué parte de la ciudad vives? ¿Tienes experiencia en algún rubro? ¿Necesitas turno mañana, tarde o noche?`,
 
-  interview: `Eres un coach de entrevistas laborales para NouuWork, la plataforma de empleos formales.
+  interview: `${MARIA_BASE}
+
+ROL ACTUAL: Coach de entrevistas laborales.
 Ayuda al usuario a prepararse para su entrevista de trabajo.
-Hazle preguntas de práctica UNA POR UNA y da feedback constructivo y sencillo.
-Usa lenguaje claro, motivador y cercano.`,
+Haz preguntas de práctica UNA POR UNA y da feedback constructivo, simple y motivador.
+Simula ser el entrevistador cuando el usuario lo pida.
+Al finalizar, da un resumen de los puntos fuertes y qué mejorar.`,
 
-  b2b: `Eres un asistente de reclutamiento para NouuWork B2B.
+  b2b: `Eres MarIA, asistente de reclutamiento para NouuWork B2B (panel de empresas).
+FECHA ACTUAL: 9 de abril de 2026.
 Ayudas a empresas a evaluar candidatos para puestos de trabajo.
-Analiza perfiles, sugiere preguntas de entrevista, y da recomendaciones objetivas.
-Sé profesional y directo.`,
+Analiza perfiles, sugiere preguntas de entrevista específicas para el cargo, y da recomendaciones objetivas.
+Sé profesional, directo y fundamenta tus evaluaciones en los datos del candidato.`,
 };
 
 const SEED_JOBS = [
@@ -77,7 +119,11 @@ app.post('/chat', async (req, res) => {
     const systemInstruction = SYSTEM_PROMPTS[sessionType] + (context ? `\n\nContexto:\n${context}` : '');
     const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
-      config: { systemInstruction, temperature: 0.7 },
+      config: {
+        systemInstruction,
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      },
       history: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
     });
     const result = await chat.sendMessage({ message });
@@ -85,6 +131,56 @@ app.post('/chat', async (req, res) => {
   } catch (err) {
     console.error('Chat error:', err);
     res.status(500).json({ error: 'Error en el asistente IA' });
+  }
+});
+
+// POST /parse-cv-file — upload a PDF or image CV and extract structured data via Gemini Vision
+// Accepts multipart/form-data with field "file"
+app.post('/parse-cv-file', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Archivo requerido (PDF o imagen)' });
+
+  try {
+    const ai = getGemini();
+    const base64 = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          parts: [
+            {
+              inlineData: { mimeType, data: base64 },
+            },
+            {
+              text: `Analiza este documento (CV / currículum) y extrae TODA la información disponible.
+Devuelve SOLO un JSON válido con esta estructura exacta (deja vacío "" si no encuentras el dato):
+{
+  "name": "",
+  "email": "",
+  "phone": "",
+  "location": "",
+  "experience": "",
+  "education": "",
+  "skills": "",
+  "languages": "",
+  "summary": ""
+}
+El campo "experience" debe contener todos los trabajos anteriores como texto continuo.
+El campo "summary" puede contener un resumen profesional si lo hay.
+NO incluyas texto fuera del JSON.`,
+            },
+          ],
+        },
+      ],
+      config: { responseMimeType: 'application/json', temperature: 0.1, maxOutputTokens: 2048 },
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    res.json(parsed);
+  } catch (err) {
+    console.error('Parse CV file error:', err);
+    res.status(500).json({ error: 'Error procesando el archivo' });
   }
 });
 
