@@ -67,9 +67,8 @@ const attachUser = async (req, res, next) => {
 };
 app.use(attachUser);
 
-// POST /chat
+// POST /chat — público (la API key está segura en el backend)
 app.post('/chat', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
   const { message, sessionType = 'cv', context, history = [] } = req.body;
   if (!message) return res.status(400).json({ error: 'message requerido' });
 
@@ -148,6 +147,132 @@ Notas: ${candidate.notes}`,
   } catch (err) {
     console.error('AI summary error:', err);
     res.status(500).json({ error: 'Error generando resumen' });
+  }
+});
+
+// POST /companies — create or update company for authenticated user
+app.post('/companies', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { name, rut, industry, size, description, email, phone, website } = req.body;
+  if (!name || !rut) return res.status(400).json({ error: 'name y rut requeridos' });
+
+  try {
+    const companyId = `company_${req.user.uid}`;
+    const companyData = {
+      id: companyId,
+      uid: req.user.uid,
+      name, rut, industry, size, description, email, phone, website,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    await admin.firestore().collection('companies').doc(companyId).set(companyData, { merge: true });
+    res.json({ id: companyId, ...companyData });
+  } catch (err) {
+    console.error('Company create error:', err);
+    res.status(500).json({ error: 'Error creando empresa' });
+  }
+});
+
+// GET /companies/:id — get company
+app.get('/companies/:id', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    const doc = await admin.firestore().collection('companies').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Empresa no encontrada' });
+    res.json({ id: doc.id, ...doc.data() });
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo empresa' });
+  }
+});
+
+// POST /companies/:id/jobs — create a job posting (also adds to public jobs collection with coords)
+app.post('/companies/:id/jobs', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { title, description, salaryMin, salaryMax, location, type, tags, urgent, coords } = req.body;
+  if (!title || !location) return res.status(400).json({ error: 'title y location requeridos' });
+
+  try {
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    // Get company name
+    const companyDoc = await admin.firestore().collection('companies').doc(req.params.id).get();
+    const companyName = companyDoc.exists ? companyDoc.data().name : 'Empresa';
+
+    const jobData = {
+      id: jobId,
+      companyId: req.params.id,
+      companyName,
+      title,
+      description: description || '',
+      salary: salaryMin && salaryMax ? `$${salaryMin} - $${salaryMax}` : salaryMin || '',
+      salaryMin: salaryMin || '',
+      salaryMax: salaryMax || '',
+      location,
+      type: type || 'Tiempo completo',
+      tags: tags || [],
+      urgent: urgent || false,
+      active: true,
+      time: 'Recién publicado',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Save to company's jobs subcollection
+    await admin.firestore()
+      .collection('companies').doc(req.params.id)
+      .collection('jobs').doc(jobId).set(jobData);
+
+    // If coords provided, also add to public jobs collection (appears on worker map)
+    if (coords && coords.lat && coords.lng) {
+      const publicJobData = { ...jobData, company: companyName, coords: [coords.lat, coords.lng] };
+      await admin.firestore().collection('jobs').doc(jobId).set(publicJobData);
+    }
+
+    res.json({ id: jobId, ...jobData });
+  } catch (err) {
+    console.error('Job create error:', err);
+    res.status(500).json({ error: 'Error creando publicación' });
+  }
+});
+
+// GET /companies/:id/jobs — list company jobs
+app.get('/companies/:id/jobs', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    const snap = await admin.firestore()
+      .collection('companies').doc(req.params.id)
+      .collection('jobs').orderBy('createdAt', 'desc').get();
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (err) {
+    res.status(500).json({ error: 'Error listando empleos' });
+  }
+});
+
+// PUT /companies/:id/jobs/:jobId — update job (e.g. deactivate)
+app.put('/companies/:id/jobs/:jobId', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    const updates = { ...req.body, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    await admin.firestore()
+      .collection('companies').doc(req.params.id)
+      .collection('jobs').doc(req.params.jobId).update(updates);
+    // Sync to public jobs collection
+    await admin.firestore().collection('jobs').doc(req.params.jobId).update(updates).catch(() => {});
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error actualizando empleo' });
+  }
+});
+
+// DELETE /companies/:id/jobs/:jobId — deactivate job
+app.delete('/companies/:id/jobs/:jobId', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    await admin.firestore()
+      .collection('companies').doc(req.params.id)
+      .collection('jobs').doc(req.params.jobId).update({ active: false });
+    await admin.firestore().collection('jobs').doc(req.params.jobId).update({ active: false }).catch(() => {});
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Error eliminando empleo' });
   }
 });
 

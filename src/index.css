@@ -75,7 +75,208 @@ body {
   border-bottom-color: #e2e8f0 !important;
 }
 
-/* Leaflet popup - dark always */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-10px) rotate(1deg); }
+  66%       { transform: translateY(-5px) rotate(-1deg); }
+}
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-16px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,90,95,0.25); }
+  50%       { box-shadow: 0 0 50px rgba(255,90,95,0.55), 0 0 80px rgba(255,90,95,0.2); }
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes slideInBlur {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0) scale(1);      filter: blur(0); }
+}
+@keyframes particleDrift {
+  0%   { transform: translate(0, 0) scale(1);    opacity: 0.4; }
+  50%  { transform: translate(15px, -20px) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(0, 0) scale(1);    opacity: 0.4; }
+}
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(255,90,95,0.2); }
+  50%       { border-color: rgba(255,90,95,0.6); }
+}
+@keyframes textGradient {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes ripple {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lineGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+/* --- Utility classes --- */
+.animate-fadeInUp        { animation: fadeInUp   0.65s cubic-bezier(.22,1,.36,1) both; }
+.animate-fadeInLeft      { animation: fadeInLeft 0.65s cubic-bezier(.22,1,.36,1) both; }
+.animate-fadeInRight     { animation: fadeInRight 0.65s cubic-bezier(.22,1,.36,1) both; }
+.animate-scaleIn         { animation: scaleIn    0.55s cubic-bezier(.22,1,.36,1) both; }
+.animate-float           { animation: float      3.5s ease-in-out infinite; }
+.animate-floatSlow       { animation: floatSlow  5s   ease-in-out infinite; }
+.animate-slideInBlur     { animation: slideInBlur 0.7s cubic-bezier(.22,1,.36,1) both; }
+.animate-pulseGlow       { animation: pulseGlow   2s  ease-in-out infinite; }
+.animate-borderGlow      { animation: borderGlow  2.5s ease-in-out infinite; }
+.animate-countUp         { animation: countUp    0.5s cubic-bezier(.22,1,.36,1) both; }
+
+.delay-100  { animation-delay: 0.10s; }
+.delay-150  { animation-delay: 0.15s; }
+.delay-200  { animation-delay: 0.20s; }
+.delay-300  { animation-delay: 0.30s; }
+.delay-400  { animation-delay: 0.40s; }
+.delay-500  { animation-delay: 0.50s; }
+.delay-600  { animation-delay: 0.60s; }
+.delay-700  { animation-delay: 0.70s; }
+.delay-800  { animation-delay: 0.80s; }
+.delay-1000 { animation-delay: 1.00s; }
+.delay-1200 { animation-delay: 1.20s; }
+.delay-1400 { animation-delay: 1.40s; }
+
+/* Gradient animated text */
+.gradient-text {
+  background: linear-gradient(270deg, #ff5a5f, #ff8c42, #ff5a5f, #e62545);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textGradient 4s linear infinite;
+}
+
+/* Shimmer button */
+.btn-shimmer {
+  background: linear-gradient(90deg, #ff5a5f 0%, #ff8a6a 40%, #ff5a5f 60%, #e62545 100%);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Hero glow blob */
+.hero-glow {
+  background: radial-gradient(ellipse at center, rgba(255,90,95,0.15) 0%, transparent 70%);
+  animation: gradientShift 6s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Particle dot */
+.particle {
+  animation: particleDrift var(--dur, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Ripple ring */
+.ripple-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,90,95,0.4);
+  animation: ripple 2s ease-out infinite;
+}
+
+/* Animated user location marker */
+@keyframes markerPing {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+@keyframes markerPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+  50%       { box-shadow: 0 0 0 10px rgba(59,130,246,0); }
+}
+.user-location-marker {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-location-marker .ring {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(59,130,246,0.25);
+  animation: markerPing 2s ease-out infinite;
+}
+.user-location-marker .ring2 {
+  animation-delay: 0.7s;
+}
+.user-location-marker .dot {
+  width: 18px;
+  height: 18px;
+  background: #3b82f6;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 20px rgba(59,130,246,0.8);
+  animation: markerPulse 2s ease-in-out infinite;
+  z-index: 10;
+  position: relative;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.3s cubic-bezier(.22,1,.36,1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  border-color: rgba(255,90,95,0.3) !important;
+}
+
+/* Step connector animated line */
+.step-line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 55%;
+  right: -55%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,90,95,0.5), rgba(255,90,95,0.1));
+  transform-origin: left;
+  animation: lineGrow 0.8s ease forwards;
+}
+
+/* ============================================
+   Leaflet popup - dark always */
 .custom-popup .leaflet-popup-content-wrapper {
   background: #222327;
   color: white;

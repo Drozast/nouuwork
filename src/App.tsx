@@ -30,14 +30,10 @@ import {
   User,
 } from "lucide-react";
 import Markdown from "react-markdown";
-import {
-  createCVChatSession,
-  createInterviewChatSession,
-  createMapChatSession,
-  extractCVData,
-} from "./lib/gemini";
+import { extractCVData } from "./lib/gemini";
+import { ChatProvider, useChat } from "./lib/chat-context";
 import { generateCVHtml, CVData } from "./lib/cv-template";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { optimizeRoute, calculateTripMetrics } from "./lib/route-optimizer";
@@ -46,6 +42,7 @@ import { Footer } from "./components/Footer";
 import { NouuLogo } from "./components/NouuLogo";
 import { AuthModal } from "./components/AuthModal";
 import { useAuth } from "./lib/auth";
+import B2BPanel from "./components/B2BPanel";
 
 const customIcon = new L.DivIcon({
   className: "custom-marker",
@@ -112,9 +109,13 @@ const Header = ({
 
         {user ? (
           <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2 bg-[#222327] border border-gray-700 px-3 py-1.5 rounded-lg">
-              <div className="w-6 h-6 bg-[#ff5a5f] rounded-full flex items-center justify-center">
-                <User className="w-3 h-3 text-white" />
+            <div
+              className="flex items-center space-x-2 bg-[#222327] border border-gray-700 px-3 py-1.5 rounded-lg cursor-pointer hover:border-gray-500 transition-colors"
+              onClick={() => setCurrentView("dashboard")}
+              title="Mi Dashboard"
+            >
+              <div className="w-6 h-6 bg-[#ff5a5f] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                {(profile?.displayName || user.email || "U").charAt(0).toUpperCase()}
               </div>
               <span className="text-sm text-gray-300 max-w-[120px] truncate">
                 {profile?.displayName || user.email}
@@ -142,27 +143,27 @@ const Header = ({
 };
 
 const CVGenerator = () => {
-  const [messages, setMessages] = useState<
-    { role: "user" | "model"; text: string }[]
-  >([
-    {
-      role: "model",
-      text: "¡Hola! Soy MarIA, tu asistente para crear tu CV profesional.\n\nVamos a armarlo paso a paso, solo conversando. No necesitas saber de formato ni de Word.\n\n**¿Cómo te llamas?**",
-    },
-  ]);
+  const { messages, isLoading, sendMessage, setSessionType, clearChat } = useChat();
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [progress, setProgress] = useState(0);
-  const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatSessionRef.current = createCVChatSession();
+    setSessionType('cv');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (messages.length > 2) {
+      const chatHistory = messages.map(m => `${m.role}: ${m.text}`).join('\n');
+      updateCVPreview(chatHistory);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   const updateCVPreview = async (chatHistory: string) => {
@@ -186,36 +187,9 @@ const CVGenerator = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
     const userMessage = input.trim();
     setInput("");
-    const newMessages = [...messages, { role: "user" as const, text: userMessage }];
-    setMessages(newMessages);
-    setIsLoading(true);
-
-    try {
-      const result = await chatSessionRef.current.sendMessage({ message: userMessage });
-      const finalMessages = [
-        ...newMessages,
-        { role: "model" as const, text: result.text },
-      ];
-      setMessages(finalMessages);
-      
-      // Update preview in background
-      const chatHistory = finalMessages.map(m => `${m.role}: ${m.text}`).join('\n');
-      updateCVPreview(chatHistory);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "model",
-          text: "Lo siento, hubo un error de conexión. ¿Podrías repetir tu respuesta?",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessage(userMessage);
   };
 
   const handleDownload = () => {
@@ -233,10 +207,10 @@ const CVGenerator = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#16171a] mb-20">
+    <div className="flex-1 flex flex-col bg-[#16171a] mb-20" style={{ background: "linear-gradient(135deg, rgba(255,90,95,0.05) 0%, transparent 60%)" }}>
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-800 flex items-center justify-between bg-[#16171a]">
-        <div className="flex items-center space-x-4">
+        <div className={`flex items-center space-x-4 animate-fadeInUp`}>
           <div className="w-12 h-12 bg-[#ff5a5f] rounded-xl flex items-center justify-center text-white">
             <FileText className="w-6 h-6" />
           </div>
@@ -247,15 +221,11 @@ const CVGenerator = () => {
             </p>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => {
-            setMessages([{
-              role: "model",
-              text: "¡Hola! Soy MarIA, tu asistente para crear tu CV profesional.\n\nVamos a armarlo paso a paso, solo conversando. No necesitas saber de formato ni de Word.\n\n**¿Cómo te llamas?**",
-            }]);
+            clearChat();
             setCvData(null);
             setProgress(0);
-            chatSessionRef.current = createCVChatSession();
           }}
           className="flex items-center space-x-2 bg-[#222327] border border-gray-700 hover:border-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
@@ -363,22 +333,65 @@ const CVGenerator = () => {
   );
 };
 
+/* Helper: recenter map when user location changes */
+const MapRecenter = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  useEffect(() => { map.setView(center, 13, { animate: true }); }, [center, map]);
+  return null;
+};
+
 const LaborMap = () => {
+  const { messages, isLoading, sendMessage, setSessionType } = useChat();
   const [itinerary, setItinerary] = useState<number[]>([]);
   const [showItinerary, setShowItinerary] = useState(false);
-  const [messages, setMessages] = useState<
-    { role: "user" | "model"; text: string }[]
-  >([
-    {
-      role: "model",
-      text: "¡Hola! Soy MarIA. Puedo ayudarte a encontrar el trabajo ideal en el mapa. ¿Qué tipo de trabajo buscas o en qué comuna?",
-    },
-  ]);
   const [input, setInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Geolocation state
+  const DEFAULT_LOCATION: [number, number] = [-33.437, -70.65];
+  const [userLocation, setUserLocation] = useState<[number, number]>(DEFAULT_LOCATION);
+  const [locationStatus, setLocationStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [manualAddress, setManualAddress] = useState('');
+  const [travelMode, setTravelMode] = useState<'walking' | 'driving'>('walking');
+  const [osrmRoute, setOsrmRoute] = useState<[number, number][] | null>(null);
+  const [osrmDistance, setOsrmDistance] = useState<number | null>(null);
+  const [osrmDuration, setOsrmDuration] = useState<number | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+
+  /* Geolocation on mount */
+  useEffect(() => {
+    if (!navigator.geolocation) { setLocationStatus('error'); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+        setLocationStatus('ok');
+      },
+      () => setLocationStatus('error'),
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  }, []);
+
+  /* OSRM real route */
+  const fetchOsrmRoute = async (waypoints: [number, number][], mode: 'walking' | 'driving') => {
+    if (waypoints.length < 2) return;
+    setRouteLoading(true);
+    try {
+      const profile = mode === 'driving' ? 'driving' : 'foot';
+      const coords = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
+      const res = await fetch(
+        `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson`
+      );
+      const data = await res.json();
+      if (data.routes?.[0]) {
+        const r = data.routes[0];
+        setOsrmRoute(r.geometry.coordinates.map(([lng, lat]: number[]) => [lat, lng] as [number, number]));
+        setOsrmDistance(r.distance / 1000);
+        setOsrmDuration(Math.round(r.duration / 60));
+      }
+    } catch { setOsrmRoute(null); }
+    finally { setRouteLoading(false); }
+  };
 
   const jobs = [
     { id: 1, title: "Cajero/a", company: "Supermercado Lider", location: "Av. Providencia 2653, Providencia", salary: "$450.000 - $550.000", time: "Hace 2 horas", tags: ["Atención al cliente", "Manejo de dinero"], urgent: true, coords: [-33.418, -70.605] as [number, number] },
@@ -406,7 +419,8 @@ const LaborMap = () => {
   }, [searchQuery, jobs]);
 
   useEffect(() => {
-    chatSessionRef.current = createMapChatSession(JSON.stringify(jobs));
+    setSessionType('map', JSON.stringify(jobs));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -415,33 +429,10 @@ const LaborMap = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
     const userMessage = input.trim();
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      const result = await chatSessionRef.current.sendMessage({ message: userMessage });
-      setMessages((prev) => [
-        ...prev,
-        { role: "model", text: result.text },
-      ]);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "model",
-          text: "Lo siento, hubo un error de conexión. ¿Podrías repetir tu respuesta?",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessage(userMessage);
   };
-
-  const userLocation: [number, number] = [-33.437, -70.65]; // Santiago center
 
   const toggleItinerary = (id: number) => {
     setItinerary((prev) =>
@@ -491,70 +482,117 @@ const LaborMap = () => {
     setShowItinerary(true);
   };
 
+  // When itinerary changes, fetch OSRM route
+  useEffect(() => {
+    if (optimizedJobs.length === 0) { setOsrmRoute(null); setOsrmDistance(null); setOsrmDuration(null); return; }
+    const waypoints: [number, number][] = [userLocation, ...optimizedJobs.map(j => j.coords)];
+    fetchOsrmRoute(waypoints, travelMode);
+  }, [optimizedJobs, travelMode, userLocation]);
+
   const openInGoogleMaps = () => {
     if (optimizedJobs.length === 0) return;
-    
     const origin = `${userLocation[0]},${userLocation[1]}`;
-    const destination = `${optimizedJobs[optimizedJobs.length - 1].coords[0]},${optimizedJobs[optimizedJobs.length - 1].coords[1]}`;
-    
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=transit`;
-    
+    const last = optimizedJobs[optimizedJobs.length - 1];
+    const destination = `${last.coords[0]},${last.coords[1]}`;
+    const gmMode = travelMode === 'driving' ? 'driving' : 'walking';
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=${gmMode}`;
     if (optimizedJobs.length > 1) {
       const waypoints = optimizedJobs.slice(0, -1).map(j => `${j.coords[0]},${j.coords[1]}`).join('|');
       url += `&waypoints=${waypoints}`;
     }
-    
     window.open(url, '_blank');
   };
 
+  // Animated user marker icon
+  const animatedUserIcon = new L.DivIcon({
+    className: '',
+    html: `<div class="user-location-marker"><div class="ring"></div><div class="ring ring2"></div><div class="dot"></div></div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  });
+
   return (
-    <div className="flex flex-col h-[calc(100vh-73px)] mb-20">
+    <div className="flex flex-col h-[calc(100vh-73px)] mb-20" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 60%)" }}>
       {/* Map Header */}
-      <div className="px-8 py-6 border-b border-gray-800 flex items-center justify-between bg-[#16171a]">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-500">
-            <MapPin className="w-6 h-6" />
+      <div className="px-6 py-4 border-b border-gray-800 bg-[#16171a]">
+        <div className="flex items-center justify-between animate-fadeInUp">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center text-orange-500">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Mapa Laboral</h2>
+              <p className="text-xs text-gray-400">
+                {locationStatus === 'loading' ? '📍 Detectando tu ubicación...' :
+                 locationStatus === 'ok' ? '📍 Ubicación detectada' :
+                 '📍 Usando Santiago centro (no se detectó tu ubicación)'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Mapa Laboral</h2>
-            <p className="text-sm text-gray-400">
-              Arma tu itinerario y optimiza tu ruta para dejar CVs
-            </p>
+          <div className="flex items-center space-x-2">
+            {/* Travel mode */}
+            <div className="flex bg-[#222327] border border-gray-800 rounded-lg p-0.5">
+              <button onClick={() => setTravelMode('walking')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1 ${travelMode === 'walking' ? 'bg-[#ff5a5f] text-white' : 'text-gray-400 hover:text-white'}`}>
+                <span>🚶</span><span>Caminando</span>
+              </button>
+              <button onClick={() => setTravelMode('driving')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1 ${travelMode === 'driving' ? 'bg-[#ff5a5f] text-white' : 'text-gray-400 hover:text-white'}`}>
+                <span>🚗</span><span>Auto</span>
+              </button>
+            </div>
+            <button
+              onClick={() => setShowItinerary(!showItinerary)}
+              className={`flex items-center space-x-2 border px-3 py-2 rounded-lg text-xs font-medium transition-colors ${showItinerary ? 'bg-[#ff5a5f] text-white border-[#ff5a5f]' : 'bg-[#222327] border-gray-700 hover:border-gray-600 text-white'}`}
+            >
+              <MapIcon className="w-4 h-4" />
+              <span>Itinerario {itinerary.length > 0 && `(${itinerary.length})`}</span>
+            </button>
           </div>
         </div>
-        <button 
-          onClick={() => setShowItinerary(!showItinerary)}
-          className={`flex items-center space-x-2 border px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showItinerary ? 'bg-[#ff5a5f] text-white border-[#ff5a5f]' : 'bg-[#222327] border-gray-700 hover:border-gray-600 text-white'}`}
-        >
-          <MapIcon className="w-4 h-4" />
-          <span>Mi itinerario {itinerary.length > 0 && `(${itinerary.length})`}</span>
-        </button>
+
+        {/* Location error banner + manual input */}
+        {locationStatus === 'error' && (
+          <div className="mt-3 flex items-center space-x-2">
+            <div className="flex-1 relative">
+              <input type="text" value={manualAddress}
+                onChange={e => setManualAddress(e.target.value)}
+                placeholder="Ingresa tu dirección (ej: Av. Providencia 100, Santiago)"
+                className="w-full bg-[#222327] border border-orange-500/30 rounded-lg py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-orange-500/60 placeholder-gray-500"
+              />
+              <MapPin className="w-4 h-4 text-orange-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <button onClick={async () => {
+              // Geocode with Nominatim
+              try {
+                const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress + ', Chile')}&limit=1`);
+                const d = await r.json();
+                if (d[0]) { setUserLocation([parseFloat(d[0].lat), parseFloat(d[0].lon)]); setLocationStatus('ok'); }
+              } catch {}
+            }} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+              Buscar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}
-      <div className="px-8 py-4 border-b border-gray-800 flex items-center space-x-4 bg-[#16171a]">
+      <div className="px-6 py-3 border-b border-gray-800 flex items-center space-x-3 bg-[#16171a]">
         <div className="flex-1 relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por cargo, empresa o etiqueta (ej. reponedor)..."
-            className="w-full bg-[#222327] border border-gray-800 rounded-lg py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-gray-600"
+          <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Buscar por cargo, empresa o habilidad..."
+            className="w-full bg-[#222327] border border-gray-800 rounded-lg py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-gray-600"
           />
-          <MapPin className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <MapPin className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
         </div>
         {searchQuery.trim() && filteredJobs.length > 0 && (
-          <button 
-            onClick={addAllFilteredToItinerary}
-            className="flex items-center space-x-2 bg-[#ff5a5f] hover:bg-[#e62545] text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Agregar visibles al itinerario</span>
+          <button onClick={addAllFilteredToItinerary}
+            className="flex items-center space-x-1.5 bg-[#ff5a5f] hover:bg-[#e62545] text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <Plus className="w-3.5 h-3.5" /><span>Agregar {filteredJobs.length}</span>
           </button>
         )}
-        <button className="flex items-center space-x-2 bg-[#222327] border border-gray-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-          <Filter className="w-4 h-4" />
-          <span>Filtros</span>
+        <button className="flex items-center space-x-1.5 bg-[#222327] border border-gray-800 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-800 transition-colors">
+          <Filter className="w-3.5 h-3.5" /><span>Filtros</span>
         </button>
       </div>
 
@@ -563,20 +601,27 @@ const LaborMap = () => {
         <div className="w-[400px] border-r border-gray-800 bg-[#16171a] overflow-y-auto flex flex-col">
           {showItinerary ? (
             <div className="p-4 flex-1 flex flex-col">
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-white mb-4">Ruta Optimizada</h3>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-white">Ruta Optimizada</h3>
+                  <span className="text-xs text-gray-500">{travelMode === 'walking' ? '🚶 Caminando' : '🚗 En auto'}</span>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-[#222327] border border-gray-800 p-3 rounded-lg text-center">
                     <div className="text-xs text-gray-400 mb-1">Distancia</div>
-                    <div className="font-bold text-white">{totalDistance.toFixed(1)} km</div>
+                    <div className="font-bold text-white text-sm">
+                      {osrmDistance != null ? `${osrmDistance.toFixed(1)} km` : `${totalDistance.toFixed(1)} km`}
+                    </div>
                   </div>
                   <div className="bg-[#222327] border border-gray-800 p-3 rounded-lg text-center">
                     <div className="text-xs text-gray-400 mb-1">Tiempo</div>
-                    <div className="font-bold text-white">{metrics.timeMinutes} min</div>
+                    <div className="font-bold text-white text-sm">
+                      {osrmDuration != null ? `${osrmDuration} min` : `${metrics.timeMinutes} min`}
+                    </div>
                   </div>
                   <div className="bg-[#222327] border border-gray-800 p-3 rounded-lg text-center">
-                    <div className="text-xs text-gray-400 mb-1">Costo est.</div>
-                    <div className="font-bold text-[#ff5a5f]">${metrics.costCLP}</div>
+                    <div className="text-xs text-gray-400 mb-1">Paradas</div>
+                    <div className="font-bold text-[#ff5a5f] text-sm">{optimizedJobs.length}</div>
                   </div>
                 </div>
               </div>
@@ -705,66 +750,74 @@ const LaborMap = () => {
 
         {/* Map Area */}
         <div className="flex-1 bg-[#0a0a0c] relative overflow-hidden z-0">
+          {routeLoading && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[#222327]/90 backdrop-blur border border-gray-700 text-white text-xs px-4 py-2 rounded-full flex items-center space-x-2">
+              <Loader2 className="w-3 h-3 animate-spin text-orange-400" />
+              <span>Calculando ruta real...</span>
+            </div>
+          )}
           <MapContainer
             center={userLocation}
-            zoom={12}
+            zoom={13}
             style={{ height: "100%", width: "100%" }}
             zoomControl={false}
           >
+            <MapRecenter center={userLocation} />
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              attribution='&copy; OpenStreetMap contributors &copy; CARTO'
             />
 
-            <Marker position={userLocation} icon={userIcon}>
-              <Popup>
-                <div className="text-gray-900 font-medium">
-                  Tu ubicación actual
+            {/* Animated user location marker */}
+            <Marker position={userLocation} icon={animatedUserIcon}>
+              <Popup className="custom-popup">
+                <div className="p-4">
+                  <p className="font-bold text-white mb-1">📍 Tu ubicación</p>
+                  <p className="text-gray-400 text-xs">Punto de partida de tu ruta</p>
                 </div>
               </Popup>
             </Marker>
 
-            {itinerary.length > 0 && (
-              <Polyline 
-                positions={polylinePositions} 
-                pathOptions={{ color: '#ff5a5f', dashArray: '5, 10', weight: 3 }} 
+            {/* Real road route from OSRM */}
+            {osrmRoute && osrmRoute.length > 1 && (
+              <Polyline
+                positions={osrmRoute}
+                pathOptions={{ color: '#ff5a5f', weight: 4, opacity: 0.85 }}
+              />
+            )}
+            {/* Fallback straight-line if no OSRM */}
+            {!osrmRoute && itinerary.length > 0 && (
+              <Polyline
+                positions={polylinePositions}
+                pathOptions={{ color: '#ff5a5f', dashArray: '6, 10', weight: 3, opacity: 0.6 }}
               />
             )}
 
             {filteredJobs.map((job) => {
               const orderIdx = optimizedRouteIds.indexOf(job.id);
               const isSelected = orderIdx !== -1;
-              
               const icon = isSelected ? new L.DivIcon({
-                className: "custom-marker-numbered",
-                html: `<div style="width: 24px; height: 24px; background: linear-gradient(45deg, #ff3c59, #ffaa02); border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(255,90,95,0.5); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">${orderIdx + 1}</div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12],
+                className: '',
+                html: `<div style="width:28px;height:28px;background:linear-gradient(135deg,#ff3c59,#ffaa02);border-radius:50%;border:2px solid white;box-shadow:0 0 20px rgba(255,90,95,0.6);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">${orderIdx + 1}</div>`,
+                iconSize: [28, 28], iconAnchor: [14, 14],
               }) : customIcon;
 
               return (
-                <Marker 
-                  key={job.id} 
-                  position={job.coords} 
-                  icon={icon}
-                  eventHandlers={{
-                    click: () => {
-                      if (!isSelected) {
-                        toggleItinerary(job.id);
-                      }
-                    }
-                  }}
-                >
-                  <Popup className="custom-popup" closeButton={true}>
-                    <div className="p-5 min-w-[240px]">
-                      <h3 className="font-bold text-lg text-white mb-4">
+                <Marker key={job.id} position={job.coords} icon={icon}
+                  eventHandlers={{ click: () => { if (!isSelected) toggleItinerary(job.id); } }}>
+                  <Popup className="custom-popup">
+                    <div className="p-4 min-w-[220px]">
+                      <h3 className="font-bold text-white mb-1">
                         {isSelected ? `#${orderIdx + 1} — ` : ''}{job.title}
                       </h3>
-                      <p className="text-gray-400 text-sm mb-4">{job.company}</p>
-                      <p className="text-green-500 font-medium mb-4">{job.salary}</p>
-                      <p className="text-gray-400 text-sm mb-4">{job.location}</p>
-                      {isSelected && (
-                        <p className="text-orange-500 font-medium text-sm">En tu itinerario</p>
+                      <p className="text-gray-400 text-sm">{job.company}</p>
+                      <p className="text-green-400 text-sm font-medium mt-1">{job.salary}</p>
+                      <p className="text-gray-500 text-xs mt-1">{job.location}</p>
+                      {!isSelected && (
+                        <button onClick={() => toggleItinerary(job.id)}
+                          className="mt-3 w-full bg-[#ff5a5f] hover:bg-[#e62545] text-white text-xs py-1.5 rounded-lg font-medium transition-colors">
+                          + Agregar al itinerario
+                        </button>
                       )}
                     </div>
                   </Popup>
@@ -859,26 +912,15 @@ const LaborMap = () => {
 };
 
 const Assistant = () => {
+  const { messages, isLoading, sendMessage, setSessionType } = useChat();
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
-  const [messages, setMessages] = useState<
-    { role: "user" | "model"; text: string }[]
-  >([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const chatSessionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (activeTopic) {
-      chatSessionRef.current = createInterviewChatSession(activeTopic);
-      setMessages([
-        {
-          role: "model",
-          text: `¡Excelente elección! Vamos a enfocarnos en: **${activeTopic}**.\n\nPara empezar, cuéntame un poco sobre el puesto al que estás postulando o el área en la que trabajas.`,
-        },
-      ]);
-    }
-  }, [activeTopic]);
+    setSessionType('interview');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -886,30 +928,15 @@ const Assistant = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
     const userMessage = input.trim();
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
-    setIsLoading(true);
+    await sendMessage(userMessage);
+  };
 
-    try {
-      const result = await chatSessionRef.current.sendMessage({ message: userMessage });
-      setMessages((prev) => [
-        ...prev,
-        { role: "model", text: result.text },
-      ]);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "model",
-          text: "Lo siento, hubo un error de conexión. ¿Podrías repetir tu respuesta?",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSelectTopic = (topic: string) => {
+    setSessionType('interview', `El usuario quiere practicar: "${topic}"`);
+    sendMessage(`Quiero prepararme para: "${topic}". ¿Por dónde empezamos?`);
+    setActiveTopic(topic);
   };
 
   if (activeTopic) {
@@ -1011,9 +1038,9 @@ const Assistant = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center py-12 px-8 max-w-4xl mx-auto w-full mb-20">
+    <div className="flex-1 flex flex-col items-center py-12 px-8 max-w-4xl mx-auto w-full mb-20" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, transparent 60%)" }}>
       {/* Header */}
-      <div className="w-full flex items-center space-x-4 mb-16 bg-[#222327] p-4 rounded-2xl border border-gray-800">
+      <div className="w-full flex items-center space-x-4 mb-16 bg-[#222327] p-4 rounded-2xl border border-gray-800 animate-fadeInUp">
         <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-500 shrink-0">
           <MessageSquare className="w-6 h-6" />
         </div>
@@ -1044,7 +1071,7 @@ const Assistant = () => {
       {/* Grid */}
       <div className="grid grid-cols-2 gap-6 w-full mb-12">
         <div
-          onClick={() => setActiveTopic("Preparar entrevista")}
+          onClick={() => handleSelectTopic("Preparar entrevista")}
           className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
@@ -1057,7 +1084,7 @@ const Assistant = () => {
         </div>
 
         <div
-          onClick={() => setActiveTopic("Preguntas frecuentes")}
+          onClick={() => handleSelectTopic("Preguntas frecuentes")}
           className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
@@ -1072,7 +1099,7 @@ const Assistant = () => {
         </div>
 
         <div
-          onClick={() => setActiveTopic("Destacar habilidades")}
+          onClick={() => handleSelectTopic("Destacar habilidades")}
           className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
@@ -1087,7 +1114,7 @@ const Assistant = () => {
         </div>
 
         <div
-          onClick={() => setActiveTopic("Simulación completa")}
+          onClick={() => handleSelectTopic("Simulación completa")}
           className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
@@ -1879,9 +1906,243 @@ const B2BLogin = () => {
   );
 };
 
+/* ─── Legal Pages ─────────────────────────────────────────────── */
+const LegalPage = ({ title, children, onBack }: { title: string; children: React.ReactNode; onBack: () => void }) => (
+  <div className="max-w-3xl mx-auto px-8 py-16 animate-fadeInUp">
+    <button onClick={onBack} className="flex items-center space-x-2 text-gray-400 hover:text-white mb-8 transition-colors text-sm">
+      <ArrowLeft className="w-4 h-4" />
+      <span>Volver</span>
+    </button>
+    <h1 className="text-3xl font-bold mb-2">{title}</h1>
+    <p className="text-gray-500 text-sm mb-10">Última actualización: abril 2026 · NOUU SpA · Santiago, Chile</p>
+    <div className="prose prose-invert prose-sm max-w-none space-y-6 text-gray-300 leading-relaxed">
+      {children}
+    </div>
+  </div>
+);
+
+const TerminosView = ({ onBack }: { onBack: () => void }) => (
+  <LegalPage title="Términos de uso" onBack={onBack}>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">1. Objeto</h2>
+      <p>NOUU SpA (en adelante "NOUU" o "NouuWork") es una plataforma tecnológica de intermediación laboral que conecta a personas que buscan empleo formal con empresas que ofrecen vacantes. Al usar NouuWork aceptas estos Términos en su totalidad.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">2. Descripción del servicio</h2>
+      <p>NouuWork ofrece: (a) generación de CV mediante asistente de IA conversacional; (b) mapa interactivo de ofertas laborales; (c) entrenamiento para entrevistas; (d) panel de reclutamiento para empresas. Los servicios se prestan en territorio chileno y se rigen por la legislación vigente.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">3. Requisitos de uso</h2>
+      <p>El servicio está disponible para personas naturales mayores de 15 años. Si eres menor de 18 años, debes contar con la autorización de tu padre, madre o tutor legal. Al registrarte declaras que la información proporcionada es veraz y actualizada.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">4. Propiedad intelectual</h2>
+      <p>Todo el contenido de NouuWork (marca, diseño, código, algoritmos de IA, textos y datos) es propiedad exclusiva de NOUU SpA. Los CVs generados son propiedad del usuario que los creó. Está prohibida la reproducción sin autorización expresa.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">5. Conducta del usuario</h2>
+      <p>El usuario se compromete a: no publicar información falsa; no usar la plataforma para actividades ilícitas; no intentar acceder a datos de otros usuarios; no hacer uso abusivo del asistente de IA. NOUU se reserva el derecho de suspender cuentas que infrinjan estas normas.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">6. Limitación de responsabilidad</h2>
+      <p>NOUU actúa como intermediario tecnológico. No garantiza la contratación ni la veracidad de las ofertas publicadas por empresas. El usuario es responsable de verificar las condiciones laborales antes de aceptar una oferta. NOUU no es parte del contrato laboral entre el trabajador y la empresa.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">7. Modificaciones</h2>
+      <p>NOUU puede modificar estos Términos con previo aviso de 30 días mediante correo electrónico o notificación en la plataforma. El uso continuado del servicio implica la aceptación de los nuevos términos.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">8. Jurisdicción</h2>
+      <p>Estos términos se rigen por las leyes de la República de Chile. Cualquier controversia será sometida a los tribunales ordinarios de justicia de Santiago de Chile.</p>
+    </section>
+  </LegalPage>
+);
+
+const PrivacidadView = ({ onBack }: { onBack: () => void }) => (
+  <LegalPage title="Política de privacidad y protección de datos" onBack={onBack}>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">1. Responsable del tratamiento</h2>
+      <p>NOUU SpA, RUT en proceso de inscripción, con domicilio en Santiago, Chile, es responsable del tratamiento de tus datos personales, conforme a la <strong className="text-white">Ley N° 21.719 de Protección de Datos Personales</strong> (vigente desde diciembre 2026) y la Ley N° 19.628.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">2. Datos que recopilamos</h2>
+      <ul className="list-disc pl-5 space-y-1">
+        <li><strong className="text-white">Datos de registro:</strong> nombre, correo electrónico, número de teléfono.</li>
+        <li><strong className="text-white">Datos del CV:</strong> experiencia laboral, educación, habilidades, idiomas (solo los que tú proporcionas).</li>
+        <li><strong className="text-white">Datos de uso:</strong> páginas visitadas, interacciones con el asistente IA, búsquedas en el mapa.</li>
+        <li><strong className="text-white">Datos técnicos:</strong> dirección IP, tipo de dispositivo, navegador.</li>
+      </ul>
+      <p className="mt-3">No recopilamos datos sensibles (salud, religión, orientación sexual, afiliación política) sin consentimiento explícito.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">3. Finalidad del tratamiento</h2>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Prestación del servicio de intermediación laboral.</li>
+        <li>Generación de CV y matching con ofertas de trabajo.</li>
+        <li>Mejora del asistente de IA (de forma anonimizada).</li>
+        <li>Comunicaciones sobre ofertas laborales relevantes (con tu consentimiento).</li>
+        <li>Cumplimiento de obligaciones legales.</li>
+      </ul>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">4. Base legal del tratamiento</h2>
+      <p>Tratamos tus datos con base en: (a) ejecución del contrato de servicio; (b) consentimiento informado para comunicaciones de marketing; (c) interés legítimo para seguridad y mejora del servicio; (d) cumplimiento de obligaciones legales.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">5. Transferencia de datos</h2>
+      <p>Tus datos pueden ser compartidos con: (a) empresas que publicaron ofertas de trabajo a las que postulaste; (b) proveedores de infraestructura (Google Cloud/Firebase) bajo acuerdos de confidencialidad; (c) autoridades competentes cuando la ley lo exija. No vendemos ni cedemos tus datos personales a terceros con fines comerciales.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">6. Tus derechos (ARCO+)</h2>
+      <p>Conforme a la Ley N° 21.719 tienes derecho a:</p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li><strong className="text-white">Acceso:</strong> conocer qué datos tenemos sobre ti.</li>
+        <li><strong className="text-white">Rectificación:</strong> corregir datos inexactos.</li>
+        <li><strong className="text-white">Cancelación/Supresión:</strong> solicitar la eliminación de tus datos.</li>
+        <li><strong className="text-white">Oposición:</strong> oponerte al tratamiento para fines específicos.</li>
+        <li><strong className="text-white">Portabilidad:</strong> recibir tus datos en formato estructurado.</li>
+        <li><strong className="text-white">Revocación del consentimiento</strong> en cualquier momento.</li>
+      </ul>
+      <p className="mt-3">Para ejercer tus derechos escríbenos a: <strong className="text-white">privacidad@nouu.cl</strong></p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">7. Cookies y tecnologías similares</h2>
+      <p>Usamos cookies esenciales para el funcionamiento del servicio (autenticación, sesión) y cookies analíticas para mejorar la experiencia. Puedes gestionar tus preferencias en la configuración de tu navegador.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">8. Retención de datos</h2>
+      <p>Conservamos tus datos mientras mantengas una cuenta activa, y hasta 5 años después de la cancelación para cumplir obligaciones legales, salvo que solicites su eliminación antes.</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">9. Seguridad</h2>
+      <p>Implementamos medidas técnicas y organizativas para proteger tus datos: cifrado TLS en tránsito, acceso restringido por roles, autenticación segura vía Firebase Auth, y respaldo periódico en Google Cloud (región us-central1).</p>
+    </section>
+    <section>
+      <h2 className="text-white font-bold text-lg mb-3">10. Contacto y reclamaciones</h2>
+      <p>Para consultas sobre privacidad: <strong className="text-white">privacidad@nouu.cl</strong>. Si no estás satisfecho con nuestra respuesta, puedes reclamar ante la Agencia de Protección de Datos Personales de Chile una vez que esté operativa.</p>
+    </section>
+  </LegalPage>
+);
+
+/* ─── Dashboard ──────────────────────────────────────────────── */
+
+const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) => {
+  const { user, profile } = useAuth();
+  const displayName = profile?.displayName || user?.email || "Usuario";
+  const initial = displayName.charAt(0).toUpperCase();
+
+  const stats = [
+    { label: "CVs creados", value: 0 },
+    { label: "Entrevistas practicadas", value: 0 },
+    { label: "Días activo", value: 0 },
+  ];
+
+  const actions = [
+    {
+      icon: FileText,
+      label: "Crear CV",
+      desc: "Conversa con MarIA y crea tu CV profesional",
+      color: "#ff5a5f",
+      bg: "bg-[#ff5a5f]/10",
+      view: "cv",
+    },
+    {
+      icon: MapIcon,
+      label: "Ver Mapa",
+      desc: "Encuentra empresas y vacantes cerca de ti",
+      color: "#f97316",
+      bg: "bg-orange-500/10",
+      view: "map",
+    },
+    {
+      icon: MessageSquare,
+      label: "Practicar Entrevista",
+      desc: "MarIA te prepara para tu próxima entrevista",
+      color: "#3b82f6",
+      bg: "bg-blue-500/10",
+      view: "assistant",
+    },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col px-8 py-10 max-w-5xl mx-auto w-full mb-20">
+      {/* Welcome */}
+      <div className="animate-fadeInUp mb-10">
+        <div className="flex items-center space-x-5">
+          <div className="w-16 h-16 bg-[#ff5a5f] rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ff5a5f]/25">
+            {initial}
+          </div>
+          <div>
+            <p className="text-sm text-gray-400 mb-1">Bienvenido de vuelta</p>
+            <h1 className="text-2xl font-bold text-white">{displayName}</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="animate-fadeInUp delay-100 grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="bg-[#222327] border border-gray-800 rounded-2xl p-6 text-center"
+          >
+            <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
+            <div className="text-sm text-gray-400">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="animate-fadeInUp delay-200">
+        <h2 className="text-lg font-bold text-white mb-4">Acciones rápidas</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {actions.map(({ icon: Icon, label, desc, color, bg, view }) => (
+            <div
+              key={view}
+              onClick={() => setCurrentView(view)}
+              className="card-hover bg-[#222327] border border-gray-800 rounded-2xl p-6 cursor-pointer"
+            >
+              <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mb-4`} style={{ color }}>
+                <Icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-white mb-1">{label}</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
+              <div className="mt-4 flex items-center space-x-1 text-xs font-medium" style={{ color }}>
+                <span>Ir ahora</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Empty state encouragement */}
+      <div className="animate-fadeInUp delay-300 mt-10 bg-[#222327] border border-gray-800 rounded-2xl p-8 text-center">
+        <div className="w-14 h-14 bg-[#ff5a5f]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Bot className="w-7 h-7 text-[#ff5a5f]" />
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">Tu viaje comienza aquí</h3>
+        <p className="text-sm text-gray-400 max-w-sm mx-auto leading-relaxed">
+          Crea tu primer CV con MarIA y da el primer paso hacia tu próximo trabajo. Solo conversando, sin formularios complicados.
+        </p>
+        <button
+          onClick={() => setCurrentView("cv")}
+          className="mt-6 btn-shimmer text-white px-8 py-3 rounded-xl font-bold text-sm hover:scale-105 transition-transform inline-flex items-center space-x-2"
+        >
+          <Bot className="w-4 h-4" />
+          <span>Hablar con MarIA</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────── */
+
 export default function App() {
   const [currentView, setCurrentView] = useState("landing");
-  const [cvKey, setCvKey] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     return (localStorage.getItem("nouu-theme") as "dark" | "light") || "dark";
   });
@@ -1896,57 +2157,58 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   const handleSetCurrentView = (view: string) => {
-    if (view === "cv" && currentView === "cv") {
-      setCvKey(prev => prev + 1);
-    }
     setCurrentView(view);
     window.scrollTo(0, 0);
-  };
-
-  const requireAuth = (view: string) => {
-    if (!user) {
-      setShowAuth(true);
-      return;
-    }
-    handleSetCurrentView(view);
   };
 
   const renderView = () => {
     switch (currentView) {
       case "landing":
-        return <LandingPage setCurrentView={handleSetCurrentView} />;
+        return <LandingPage setCurrentView={handleSetCurrentView} onOpenAuth={() => setShowAuth(true)} />;
       case "cv":
-        return <CVGenerator key={cvKey} />;
+        return <CVGenerator />;
       case "map":
         return <LaborMap />;
       case "assistant":
         return <Assistant />;
       case "b2b":
-        return <B2BLogin />;
+        return <B2BPanel setCurrentView={handleSetCurrentView} onOpenAuth={() => setShowAuth(true)} />;
+      case "dashboard":
+        return <Dashboard setCurrentView={handleSetCurrentView} />;
+      case "terminos":
+        return <TerminosView onBack={() => handleSetCurrentView("landing")} />;
+      case "privacidad":
+        return <PrivacidadView onBack={() => handleSetCurrentView("landing")} />;
       default:
-        return <LandingPage setCurrentView={handleSetCurrentView} />;
+        return <LandingPage setCurrentView={handleSetCurrentView} onOpenAuth={() => setShowAuth(true)} />;
     }
   };
 
   return (
-    <div className={`min-h-screen font-sans flex flex-col ${theme === "dark" ? "bg-[#16171a] text-white" : "bg-gray-50 text-gray-900"}`}>
-      <Header
-        currentView={currentView}
-        setCurrentView={(v) => {
-          // Protected views require auth
-          if (["cv", "map", "assistant", "b2b"].includes(v) && !user) {
-            setShowAuth(true);
-            return;
-          }
-          handleSetCurrentView(v);
-        }}
-        theme={theme}
-        toggleTheme={toggleTheme}
-        onOpenAuth={() => setShowAuth(true)}
-      />
-      <main className="flex-1 flex flex-col">{renderView()}</main>
-      <Footer />
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
-    </div>
+    <ChatProvider>
+      <div className={`min-h-screen font-sans flex flex-col ${theme === "dark" ? "bg-[#16171a] text-white" : "bg-gray-50 text-gray-900"}`}>
+        <Header
+          currentView={currentView}
+          setCurrentView={(v) => {
+            // Protected views require auth
+            if (["cv", "map", "assistant", "b2b"].includes(v) && !user) {
+              setShowAuth(true);
+              return;
+            }
+            handleSetCurrentView(v);
+          }}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onOpenAuth={() => setShowAuth(true)}
+        />
+        <main className="flex-1 flex flex-col">
+          <div key={currentView} style={{ animation: "fadeInUp 0.4s cubic-bezier(.22,1,.36,1) both" }}>
+            {renderView()}
+          </div>
+        </main>
+        <Footer setCurrentView={handleSetCurrentView} />
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      </div>
+    </ChatProvider>
   );
 }
