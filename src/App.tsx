@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { extractCVData } from "./lib/gemini";
-import { ChatProvider, useChat } from "./lib/chat-context";
+import { ChatProvider, useChat, setAuthGateCallback } from "./lib/chat-context";
 import { generateCVHtml, CVData } from "./lib/cv-template";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -2150,6 +2150,11 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const { user } = useAuth();
 
+  // Wire auth gate so ChatContext can open the modal when user hits the limit
+  useEffect(() => {
+    setAuthGateCallback(() => setShowAuth(true));
+  }, []);
+
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("nouu-theme", theme);
@@ -2190,14 +2195,7 @@ export default function App() {
       <div className={`min-h-screen font-sans flex flex-col ${theme === "dark" ? "bg-[#16171a] text-white" : "bg-gray-50 text-gray-900"}`}>
         <Header
           currentView={currentView}
-          setCurrentView={(v) => {
-            // Protected views require auth
-            if (["cv", "map", "assistant", "b2b"].includes(v) && !user) {
-              setShowAuth(true);
-              return;
-            }
-            handleSetCurrentView(v);
-          }}
+          setCurrentView={handleSetCurrentView}
           theme={theme}
           toggleTheme={toggleTheme}
           onOpenAuth={() => setShowAuth(true)}
