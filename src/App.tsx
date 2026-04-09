@@ -235,18 +235,18 @@ const CVGenerator = () => {
       </div>
 
       {/* Progress Bar */}
-      <div className="px-8 py-3 border-b border-gray-800 bg-[#16171a] flex items-center justify-between text-sm">
+      <div className="animate-fadeInUp delay-100 px-8 py-3 border-b border-gray-800 bg-[#16171a] flex items-center justify-between text-sm">
         <span className="text-gray-400">Progreso de tu CV</span>
         <span className="text-gray-400">{progress}%</span>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 flex justify-center p-8 overflow-hidden h-[calc(100vh-200px)]">
-        <div className="w-full max-w-3xl bg-[#222327] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl flex flex-col h-full">
+        <div className="animate-slideInBlur delay-200 w-full max-w-3xl bg-[#222327] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl flex flex-col h-full">
           {/* Chat Header */}
           <div className="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-[#ff5a5f] rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#ff5a5f] rounded-full flex items-center justify-center animate-float">
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -272,7 +272,7 @@ const CVGenerator = () => {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex space-x-3 ${msg.role === "user" ? "flex-row-reverse space-x-reverse" : ""}`}
+                className={`flex space-x-3 ${msg.role === "user" ? "flex-row-reverse space-x-reverse" : ""} ${idx === messages.length - 1 ? "animate-fadeInUp" : ""}`}
               >
                 {msg.role === "model" && (
                   <div className="w-8 h-8 bg-[#ff5a5f] rounded-full flex items-center justify-center shrink-0 mt-1">
@@ -598,7 +598,7 @@ const LaborMap = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel */}
-        <div className="w-[400px] border-r border-gray-800 bg-[#16171a] overflow-y-auto flex flex-col">
+        <div className="animate-fadeInLeft w-[400px] border-r border-gray-800 bg-[#16171a] overflow-y-auto flex flex-col">
           {showItinerary ? (
             <div className="p-4 flex-1 flex flex-col">
               <div className="mb-4">
@@ -688,10 +688,11 @@ const LaborMap = () => {
                 </span>
               </div>
 
-              {filteredJobs.map((job) => (
+              {filteredJobs.map((job, idx) => (
                 <div
                   key={job.id}
-                  className={`bg-[#222327] border ${itinerary.includes(job.id) ? "border-[#ff5a5f]" : "border-gray-800"} rounded-xl p-4 hover:border-gray-600 transition-colors cursor-pointer group`}
+                  className={`animate-fadeInUp bg-[#222327] border ${itinerary.includes(job.id) ? "border-[#ff5a5f]" : "border-gray-800"} rounded-xl p-4 hover:border-gray-600 transition-colors cursor-pointer group`}
+                  style={{ animationDelay: `${idx * 60}ms` }}
                   onClick={() => toggleItinerary(job.id)}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -749,7 +750,7 @@ const LaborMap = () => {
         </div>
 
         {/* Map Area */}
-        <div className="flex-1 bg-[#0a0a0c] relative overflow-hidden z-0">
+        <div className="animate-scaleIn delay-100 flex-1 bg-[#0a0a0c] relative overflow-hidden z-0">
           {routeLoading && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[#222327]/90 backdrop-blur border border-gray-700 text-white text-xs px-4 py-2 rounded-full flex items-center space-x-2">
               <Loader2 className="w-3 h-3 animate-spin text-orange-400" />
@@ -828,10 +829,10 @@ const LaborMap = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="w-[350px] border-l border-gray-800 bg-[#16171a] flex flex-col">
+        <div className="animate-fadeInRight delay-150 w-[350px] border-l border-gray-800 bg-[#16171a] flex flex-col">
           {/* Chat Header */}
           <div className="p-4 border-b border-gray-800 flex items-center space-x-3 shrink-0">
-            <div className="w-8 h-8 bg-[#ff5a5f] rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#ff5a5f] rounded-full flex items-center justify-center animate-float">
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -955,7 +956,7 @@ const Assistant = () => {
           </div>
         </div>
 
-        <div className="w-full bg-[#222327] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl flex flex-col flex-1 min-h-0">
+        <div className="animate-slideInBlur w-full bg-[#222327] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl flex flex-col flex-1 min-h-0">
           {/* Chat Header */}
           <div className="p-4 border-b border-gray-800 flex items-center space-x-3 shrink-0">
             <div className="w-10 h-10 bg-[#ff5a5f] rounded-full flex items-center justify-center">
@@ -977,7 +978,7 @@ const Assistant = () => {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex space-x-3 ${msg.role === "user" ? "flex-row-reverse space-x-reverse" : ""}`}
+                className={`flex space-x-3 ${msg.role === "user" ? "flex-row-reverse space-x-reverse" : ""} ${idx === messages.length - 1 ? "animate-fadeInUp" : ""}`}
               >
                 {msg.role === "model" && (
                   <div className="w-8 h-8 bg-[#ff5a5f] rounded-full flex items-center justify-center shrink-0 mt-1">
@@ -1056,13 +1057,13 @@ const Assistant = () => {
 
       {/* Main Content */}
       <div className="text-center mb-12">
-        <div className="w-16 h-16 bg-[#ff5a5f] rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(255,90,95,0.3)]">
-          <Bot className="w-8 h-8 text-white" />
+        <div className="animate-scaleIn delay-100 w-16 h-16 bg-[#ff5a5f] rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(255,90,95,0.3)]">
+          <Bot className="w-8 h-8 text-white animate-float delay-300" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-3">
+        <h1 className="animate-fadeInUp delay-200 text-3xl font-bold text-white mb-3">
           ¿En qué te ayudo hoy?
         </h1>
-        <p className="text-gray-400">
+        <p className="animate-fadeInUp delay-200 text-gray-400">
           Elige un tema y MarIA te guiará paso a paso para que llegues preparado
           a tu entrevista.
         </p>
@@ -1072,7 +1073,7 @@ const Assistant = () => {
       <div className="grid grid-cols-2 gap-6 w-full mb-12">
         <div
           onClick={() => handleSelectTopic("Preparar entrevista")}
-          className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
+          className="animate-fadeInUp delay-300 bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
             <Target className="w-5 h-5" />
@@ -1085,7 +1086,7 @@ const Assistant = () => {
 
         <div
           onClick={() => handleSelectTopic("Preguntas frecuentes")}
-          className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
+          className="animate-fadeInUp delay-400 bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
             <MessageSquare className="w-5 h-5" />
@@ -1100,7 +1101,7 @@ const Assistant = () => {
 
         <div
           onClick={() => handleSelectTopic("Destacar habilidades")}
-          className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
+          className="animate-fadeInUp delay-500 bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
             <Lightbulb className="w-5 h-5" />
@@ -1115,7 +1116,7 @@ const Assistant = () => {
 
         <div
           onClick={() => handleSelectTopic("Simulación completa")}
-          className="bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
+          className="animate-fadeInUp delay-600 bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
         >
           <div className="w-10 h-10 bg-[#ff5a5f]/20 rounded-lg flex items-center justify-center text-[#ff5a5f] mb-4 group-hover:bg-[#ff5a5f] group-hover:text-white transition-colors">
             <Briefcase className="w-5 h-5" />
@@ -1128,7 +1129,7 @@ const Assistant = () => {
       </div>
 
       {/* Tips */}
-      <div className="w-full bg-[#222327] border border-gray-800 rounded-2xl p-6">
+      <div className="animate-fadeInUp delay-700 w-full bg-[#222327] border border-gray-800 rounded-2xl p-6">
         <div className="flex items-center space-x-2 mb-4">
           <CheckCircle2 className="w-5 h-5 text-green-500" />
           <h3 className="text-white font-semibold">Tips rápidos</h3>
@@ -2069,7 +2070,7 @@ const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) 
       {/* Welcome */}
       <div className="animate-fadeInUp mb-10">
         <div className="flex items-center space-x-5">
-          <div className="w-16 h-16 bg-[#ff5a5f] rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ff5a5f]/25">
+          <div className="w-16 h-16 bg-[#ff5a5f] rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ff5a5f]/25 animate-pulseGlow">
             {initial}
           </div>
           <div>
@@ -2084,7 +2085,7 @@ const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) 
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-[#222327] border border-gray-800 rounded-2xl p-6 text-center"
+            className="card-hover bg-[#222327] border border-gray-800 rounded-2xl p-6 text-center"
           >
             <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
             <div className="text-sm text-gray-400">{stat.label}</div>

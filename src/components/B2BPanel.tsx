@@ -251,7 +251,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
           <p className="text-gray-400">Completa los datos para comenzar a publicar empleos y gestionar candidatos</p>
         </div>
 
-        <div className="bg-[#222327] border border-gray-800 rounded-2xl p-8">
+        <div className="animate-slideInBlur bg-[#222327] border border-gray-800 rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
@@ -842,7 +842,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-24 bg-green-500/5 blur-3xl rounded-full" />
         </div>
-        <div className="relative flex items-center justify-between flex-wrap gap-4">
+        <div className="animate-fadeInUp relative flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center justify-center">
               <Building className="w-6 h-6 text-green-400" />
@@ -880,7 +880,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
       </div>
 
       {/* Tabs */}
-      <div className="px-8 pt-5 pb-0 border-b border-gray-800">
+      <div className="animate-fadeInLeft px-8 pt-5 pb-0 border-b border-gray-800">
         <div className="flex space-x-1 bg-[#222327] p-1 rounded-xl w-fit border border-gray-800">
           {(["empresa", "empleos", "candidatos"] as const).map(tab => (
             <button
@@ -1151,7 +1151,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                 { label: "Entrevistados", value: candidates.filter(c => c.status === "Entrevistado").length, color: "text-blue-400" },
                 { label: "Score prom.", value: `${Math.round(candidates.reduce((s, c) => s + c.score, 0) / candidates.length)}%`, color: "text-[#ff5a5f]" },
               ].map(m => (
-                <div key={m.label} className="bg-[#222327] border border-gray-800 rounded-xl p-4">
+                <div key={m.label} className="card-hover bg-[#222327] border border-gray-800 rounded-xl p-4">
                   <div className="text-gray-500 text-xs mb-1">{m.label}</div>
                   <div className={`text-2xl font-bold ${m.color}`}>{m.value}</div>
                 </div>
