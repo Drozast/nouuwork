@@ -118,7 +118,7 @@ app.post('/chat', async (req, res) => {
     const ai = getGemini();
     const systemInstruction = SYSTEM_PROMPTS[sessionType] + (context ? `\n\nContexto:\n${context}` : '');
     const chat = ai.chats.create({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-lite',
       config: {
         systemInstruction,
         temperature: 0.7,
@@ -145,7 +145,7 @@ app.post('/parse-cv-file', upload.single('file'), async (req, res) => {
     const mimeType = req.file.mimetype;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-lite',
       contents: [
         {
           parts: [
@@ -193,7 +193,7 @@ app.post('/extract-cv', async (req, res) => {
   try {
     const ai = getGemini();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-lite',
       contents: `Extrae la información del siguiente historial de chat para armar un CV.
 Devuelve SOLO un JSON válido con esta estructura (vacío si no hay info):
 {"name":"","email":"","phone":"","location":"","experience":"","education":"","skills":"","languages":""}
@@ -229,7 +229,7 @@ app.post('/ai-summary', async (req, res) => {
   try {
     const ai = getGemini();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-lite',
       contents: `Resume en 2-3 oraciones por qué este candidato es o no adecuado para "${jobTitle}". Sé directo.
 
 Candidato: ${candidate.name} | Score: ${candidate.score}%
