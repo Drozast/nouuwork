@@ -30,6 +30,7 @@ import {
   Moon,
   LogOut,
   User,
+  Menu,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { extractCVData } from "./lib/gemini";
@@ -74,6 +75,7 @@ const Header = ({
   onOpenAuth: () => void;
 }) => {
   const { user, profile, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { id: "cv", icon: FileText, label: "Crear CV" },
@@ -83,11 +85,11 @@ const Header = ({
   ];
 
   return (
-    <header className="flex items-center justify-between px-8 py-4 border-b border-gray-800 bg-[#16171a] dark:bg-[#16171a] light:bg-white sticky top-0 z-50">
+    <header className="relative flex items-center justify-between px-4 md:px-8 py-4 border-b border-gray-800 bg-[#16171a] dark:bg-[#16171a] light:bg-white sticky top-0 z-50">
       <div className="cursor-pointer" onClick={() => setCurrentView("landing")}>
         <NouuLogo className="text-2xl" />
       </div>
-      <nav className="flex space-x-8">
+      <nav className="hidden md:flex space-x-8">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -99,7 +101,7 @@ const Header = ({
           </button>
         ))}
       </nav>
-      <div className="flex items-center space-x-3">
+      <div className="hidden md:flex items-center space-x-3">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -140,6 +142,50 @@ const Header = ({
           </button>
         )}
       </div>
+
+      {/* Mobile controls */}
+      <div className="flex items-center space-x-2 md:hidden">
+        <button onClick={toggleTheme} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#222327] border border-gray-700 text-gray-400 hover:text-white transition-colors">
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+        <button onClick={() => setMobileMenuOpen(v => !v)} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#222327] border border-gray-700 text-gray-400 hover:text-white transition-colors">
+          {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {mobileMenuOpen && (
+        <div className="absolute top-full left-0 right-0 bg-[#1e1f23] border-b border-gray-800 z-50 md:hidden">
+          <nav className="flex flex-col">
+            {navItems.map((item) => (
+              <button key={item.id} onClick={() => { setCurrentView(item.id); setMobileMenuOpen(false); }}
+                className={`flex items-center space-x-3 px-6 py-4 text-sm font-medium border-b border-gray-800/50 transition-colors ${currentView === item.id ? "text-white bg-[#ff5a5f]/10" : "text-gray-400 hover:text-white hover:bg-[#222327]"}`}>
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className="px-6 py-4 flex items-center justify-between">
+            {user ? (
+              <div className="flex items-center space-x-3 w-full">
+                <div className="flex items-center space-x-2 flex-1 bg-[#222327] border border-gray-700 px-3 py-2 rounded-lg cursor-pointer" onClick={() => { setCurrentView("dashboard"); setMobileMenuOpen(false); }}>
+                  <div className="w-6 h-6 bg-[#ff5a5f] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    {(profile?.displayName || user.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm text-gray-300 truncate">{profile?.displayName || user.email}</span>
+                </div>
+                <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#222327] border border-gray-700 text-gray-400 hover:text-red-400 transition-colors">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => { onOpenAuth(); setMobileMenuOpen(false); }} className="w-full bg-[#ff5a5f] hover:bg-[#ff444a] text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+                Ingresar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };
@@ -287,7 +333,7 @@ const CVGenerator = () => {
   return (
     <div className="flex-1 flex flex-col bg-[#16171a] mb-20" style={{ background: "linear-gradient(135deg, rgba(255,90,95,0.05) 0%, transparent 60%)" }}>
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-800 flex items-center justify-between bg-[#16171a]">
+      <div className="px-4 md:px-8 py-4 md:py-6 border-b border-gray-800 flex items-center justify-between bg-[#16171a]">
         <div className={`flex items-center space-x-4 animate-fadeInUp`}>
           <div className="w-12 h-12 bg-[#ff5a5f] rounded-xl flex items-center justify-center text-white">
             <FileText className="w-6 h-6" />
@@ -308,18 +354,18 @@ const CVGenerator = () => {
           className="flex items-center space-x-2 bg-[#222327] border border-gray-700 hover:border-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span>Reiniciar</span>
+          <span className="hidden sm:inline">Reiniciar</span>
         </button>
       </div>
 
       {/* Progress Bar */}
-      <div className="animate-fadeInUp delay-100 px-8 py-3 border-b border-gray-800 bg-[#16171a] flex items-center justify-between text-sm">
+      <div className="animate-fadeInUp delay-100 px-4 md:px-8 py-3 border-b border-gray-800 bg-[#16171a] flex items-center justify-between text-sm">
         <span className="text-gray-400">Progreso de tu CV</span>
         <span className="text-gray-400">{progress}%</span>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex justify-center p-8 overflow-hidden h-[calc(100vh-200px)]">
+      <div className="flex-1 flex justify-center p-2 md:p-8 overflow-hidden h-[calc(100vh-200px)]">
         <div className="animate-slideInBlur delay-200 w-full max-w-3xl bg-[#222327] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl flex flex-col h-full">
           {/* Chat Header */}
           <div className="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
@@ -518,6 +564,7 @@ const LaborMap = () => {
   const [itinerary, setItinerary] = useState<number[]>([]);
   const [showItinerary, setShowItinerary] = useState(false);
   const [input, setInput] = useState("");
+  const [mobileTab, setMobileTab] = useState<'jobs' | 'map' | 'chat'>('jobs');
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -685,7 +732,7 @@ const LaborMap = () => {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-73px)] mb-20" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 60%)" }}>
+    <div className="flex flex-col h-[calc(100vh-73px)] pb-16 md:pb-0 mb-0 md:mb-20" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 60%)" }}>
       {/* Map Header */}
       <div className="px-6 py-4 border-b border-gray-800 bg-[#16171a]">
         <div className="flex items-center justify-between animate-fadeInUp">
@@ -702,16 +749,16 @@ const LaborMap = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
             {/* Travel mode */}
             <div className="flex bg-[#222327] border border-gray-800 rounded-lg p-0.5">
               <button onClick={() => setTravelMode('walking')}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1 ${travelMode === 'walking' ? 'bg-[#ff5a5f] text-white' : 'text-gray-400 hover:text-white'}`}>
-                <span>🚶</span><span>Caminando</span>
+                <span>🚶</span><span className="hidden sm:inline"> Caminando</span>
               </button>
               <button onClick={() => setTravelMode('driving')}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1 ${travelMode === 'driving' ? 'bg-[#ff5a5f] text-white' : 'text-gray-400 hover:text-white'}`}>
-                <span>🚗</span><span>Auto</span>
+                <span>🚗</span><span className="hidden sm:inline"> Auto</span>
               </button>
             </div>
             <button
@@ -769,9 +816,9 @@ const LaborMap = () => {
         </button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Left Panel */}
-        <div className="animate-fadeInLeft w-[400px] border-r border-gray-800 bg-[#16171a] overflow-y-auto flex flex-col">
+        <div className={`animate-fadeInLeft md:w-[400px] w-full border-r border-gray-800 bg-[#16171a] overflow-y-auto flex-col ${mobileTab === 'jobs' ? 'flex' : 'hidden md:flex'}`}>
           {showItinerary ? (
             <div className="p-4 flex-1 flex flex-col">
               <div className="mb-4">
@@ -926,7 +973,7 @@ const LaborMap = () => {
         </div>
 
         {/* Map Area */}
-        <div className="animate-scaleIn delay-100 flex-1 bg-[#0a0a0c] relative overflow-hidden z-0">
+        <div className={`animate-scaleIn delay-100 flex-1 bg-[#0a0a0c] relative overflow-hidden z-0 ${mobileTab === 'map' ? 'block' : 'hidden md:block'}`} style={{minHeight: mobileTab === 'map' ? '100%' : undefined}}>
           {routeLoading && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[#222327]/90 backdrop-blur border border-gray-700 text-white text-xs px-4 py-2 rounded-full flex items-center space-x-2">
               <Loader2 className="w-3 h-3 animate-spin text-orange-400" />
@@ -1006,7 +1053,7 @@ const LaborMap = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="animate-fadeInRight delay-150 w-[350px] border-l border-gray-800 bg-[#16171a] flex flex-col">
+        <div className={`animate-fadeInRight delay-150 md:w-[350px] w-full border-l border-gray-800 bg-[#16171a] flex-col ${mobileTab === 'chat' ? 'flex' : 'hidden md:flex'}`}>
           {/* Chat Header */}
           <div className="p-4 border-b border-gray-800 flex items-center space-x-3 shrink-0">
             <div className="w-8 h-8 bg-[#ff5a5f] rounded-full flex items-center justify-center animate-float">
@@ -1084,6 +1131,21 @@ const LaborMap = () => {
             </div>
           </div>
         </div>
+
+        {/* Mobile tab bar — visible only on small screens */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1e1f23] border-t border-gray-800 flex z-50">
+          {[
+            { id: 'jobs' as const, icon: Filter, label: 'Trabajos' },
+            { id: 'map' as const, icon: MapIcon, label: 'Mapa' },
+            { id: 'chat' as const, icon: MessageSquare, label: 'MarIA' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setMobileTab(tab.id)}
+              className={`flex-1 flex flex-col items-center justify-center py-3 space-y-1 transition-colors ${mobileTab === tab.id ? 'text-[#ff5a5f]' : 'text-gray-500'}`}>
+              <tab.icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1119,7 +1181,7 @@ const Assistant = () => {
 
   if (activeTopic) {
     return (
-      <div className="flex-1 flex flex-col items-center py-8 px-8 max-w-3xl mx-auto w-full h-[calc(100vh-73px)] mb-20">
+      <div className="flex-1 flex flex-col items-center py-4 md:py-8 px-4 md:px-8 max-w-3xl mx-auto w-full h-[calc(100vh-73px)] mb-20">
         <div className="w-full flex items-center justify-between mb-6">
           <button
             onClick={() => setActiveTopic(null)}
@@ -1216,9 +1278,9 @@ const Assistant = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center py-12 px-8 max-w-4xl mx-auto w-full mb-20" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, transparent 60%)" }}>
+    <div className="flex-1 flex flex-col items-center py-6 md:py-12 px-4 md:px-8 max-w-4xl mx-auto w-full mb-20" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, transparent 60%)" }}>
       {/* Header */}
-      <div className="w-full flex items-center space-x-4 mb-16 bg-[#222327] p-4 rounded-2xl border border-gray-800 animate-fadeInUp">
+      <div className="w-full flex items-center space-x-4 mb-8 md:mb-16 bg-[#222327] p-4 rounded-2xl border border-gray-800 animate-fadeInUp">
         <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-500 shrink-0">
           <MessageSquare className="w-6 h-6" />
         </div>
@@ -1247,7 +1309,7 @@ const Assistant = () => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 gap-6 w-full mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 w-full mb-8 md:mb-12">
         <div
           onClick={() => handleSelectTopic("Preparar entrevista")}
           className="animate-fadeInUp delay-300 bg-[#222327] border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors cursor-pointer group"
@@ -1515,8 +1577,8 @@ const B2BLogin = () => {
 
   if (isLoggedIn) {
     return (
-      <div className="flex-1 flex flex-col p-8 bg-[#16171a] overflow-y-auto">
-        <div className="flex justify-between items-center mb-8">
+      <div className="flex-1 flex flex-col p-4 md:p-8 bg-[#16171a] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">Dashboard de Reclutamiento</h1>
             <p className="text-gray-400 text-sm">Gestiona tus candidatos pre-filtrados por IA</p>
@@ -2244,7 +2306,7 @@ const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) 
   ];
 
   return (
-    <div className="flex-1 flex flex-col px-8 py-10 max-w-5xl mx-auto w-full mb-20">
+    <div className="flex-1 flex flex-col px-4 md:px-8 py-6 md:py-10 max-w-5xl mx-auto w-full mb-20">
       {/* Welcome */}
       <div className="animate-fadeInUp mb-10">
         <div className="flex items-center space-x-5">
