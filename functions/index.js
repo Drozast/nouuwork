@@ -372,4 +372,93 @@ app.delete('/companies/:id/jobs/:jobId', async (req, res) => {
   }
 });
 
+// POST /profile/cv — save or update user's CV data in Firestore
+app.post('/profile/cv', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const cvData = req.body;
+  if (!cvData || !cvData.name) return res.status(400).json({ error: 'CV data requerida' });
+
+  try {
+    const cvDoc = {
+      ...cvData,
+      uid: req.user.uid,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    await admin.firestore().collection('user_cvs').doc(req.user.uid).set(cvDoc, { merge: true });
+    res.json({ success: true, id: req.user.uid });
+  } catch (err) {
+    console.error('Save CV error:', err);
+    res.status(500).json({ error: 'Error guardando CV' });
+  }
+});
+
+// GET /profile/cv — get user's saved CV
+app.get('/profile/cv', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    const doc = await admin.firestore().collection('user_cvs').doc(req.user.uid).get();
+    if (!doc.exists) return res.status(404).json({ error: 'CV no encontrado' });
+    res.json(doc.data());
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo CV' });
+  }
+});
+
+// POST /applications — apply to a job with user's saved CV
+app.post('/applications', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  const { jobId, jobTitle, company } = req.body;
+  if (!jobId || !jobTitle) return res.status(400).json({ error: 'jobId y jobTitle requeridos' });
+
+  try {
+    // Get user's CV
+    const cvDoc = await admin.firestore().collection('user_cvs').doc(req.user.uid).get();
+    if (!cvDoc.exists) return res.status(400).json({ error: 'Debes crear tu CV antes de postular' });
+
+    const cvData = cvDoc.data();
+    const appId = `app_${Date.now()}_${req.user.uid.slice(0, 6)}`;
+
+    const application = {
+      id: appId,
+      uid: req.user.uid,
+      applicantName: cvData.name || '',
+      applicantEmail: cvData.email || '',
+      applicantPhone: cvData.phone || '',
+      jobId,
+      jobTitle,
+      company: company || '',
+      cvData,
+      status: 'Enviada',
+      appliedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // Save to applications collection (B2B panel will query by jobId)
+    await admin.firestore().collection('applications').doc(appId).set(application);
+
+    // Also save reference in user's sub-collection
+    await admin.firestore()
+      .collection('user_cvs').doc(req.user.uid)
+      .collection('applications').doc(appId).set({ jobId, jobTitle, company, status: 'Enviada', appliedAt: admin.firestore.FieldValue.serverTimestamp() });
+
+    res.json({ success: true, applicationId: appId });
+  } catch (err) {
+    console.error('Application error:', err);
+    res.status(500).json({ error: 'Error enviando postulación' });
+  }
+});
+
+// GET /applications — list user's job applications
+app.get('/applications', async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'No autorizado' });
+  try {
+    const snap = await admin.firestore()
+      .collection('user_cvs').doc(req.user.uid)
+      .collection('applications').orderBy('appliedAt', 'desc').get();
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (err) {
+    res.status(500).json({ error: 'Error listando postulaciones' });
+  }
+});
+
 exports.api = functions.https.onRequest(app);

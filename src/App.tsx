@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   FileText,
   Map as MapIcon,
@@ -144,10 +146,12 @@ const Header = ({
 
 const CVGenerator = () => {
   const { messages, isLoading, sendMessage, setSessionType, clearChat } = useChat();
+  const { user } = useAuth();
   const [input, setInput] = useState("");
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -168,9 +172,27 @@ const CVGenerator = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
+  const saveCVToFirestore = async (data: CVData) => {
+    if (!user) return;
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '';
+      const { auth } = await import('./lib/firebase');
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      await fetch(`${API_BASE}/api/profile/cv`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(data),
+      });
+    } catch { /* silent fail */ }
+  };
+
   const updateCVPreview = async (chatHistory: string) => {
     const data = await extractCVData(chatHistory);
     setCvData(data as unknown as CVData);
+    saveCVToFirestore(data as unknown as CVData);
     let filled = 0;
     const totalFields = 8;
     if (data.name) filled++;
@@ -236,18 +258,30 @@ const CVGenerator = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!cvData) return;
-    const html = generateCVHtml(cvData);
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CV_${cvData.name?.replace(/\s+/g, '_') || 'NOUU'}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setDownloadLoading(true);
+    try {
+      const html = generateCVHtml(cvData);
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      container.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;background:white;';
+      document.body.appendChild(container);
+
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      document.body.removeChild(container);
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`CV_${cvData.name?.replace(/\s+/g, '_') || 'NOUU'}.pdf`);
+    } catch (err) {
+      console.error('PDF error:', err);
+    } finally {
+      setDownloadLoading(false);
+    }
   };
 
   return (
@@ -301,14 +335,23 @@ const CVGenerator = () => {
                 </div>
               </div>
             </div>
-            <button 
-              onClick={handleDownload}
-              disabled={!cvData}
-              className="text-[#ff5a5f] hover:text-[#ff444a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Descargar CV"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-            </button>
+            <div className="flex items-center space-x-3">
+              {user && cvData?.name && (
+                <span className="text-xs text-green-500 font-medium">✓ Guardado en tu perfil</span>
+              )}
+              <button
+                onClick={handleDownload}
+                disabled={!cvData || downloadLoading}
+                className="text-[#ff5a5f] hover:text-[#ff444a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Descargar CV como PDF"
+              >
+                {downloadLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Chat Messages */}
@@ -398,6 +441,68 @@ const CVGenerator = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const ApplyButton = ({ jobId, jobTitle, company }: { jobId: number; jobTitle: string; company: string }) => {
+  const { user } = useAuth();
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'no-cv'>('idle');
+
+  const handleApply = async () => {
+    if (!user) {
+      window.dispatchEvent(new CustomEvent('nouu:need-auth'));
+      return;
+    }
+    setStatus('loading');
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '';
+      const { auth } = await import('./lib/firebase');
+      const token = await auth.currentUser?.getIdToken().catch(() => null);
+      const res = await fetch(`${API_BASE}/api/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ jobId: String(jobId), jobTitle, company }),
+      });
+      const data = await res.json();
+      if (res.status === 400 && data.error?.includes('CV')) {
+        setStatus('no-cv');
+      } else if (res.ok) {
+        setStatus('success');
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success') return (
+    <div className="mt-3 w-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs py-2 px-3 rounded-lg text-center font-medium">
+      ✓ Postulación enviada
+    </div>
+  );
+
+  if (status === 'no-cv') return (
+    <div className="mt-3 w-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs py-2 px-3 rounded-lg text-center">
+      Crea tu CV primero para postular
+    </div>
+  );
+
+  return (
+    <button
+      onClick={handleApply}
+      disabled={status === 'loading'}
+      className="mt-2 w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white text-xs py-1.5 rounded-lg font-medium transition-colors flex items-center justify-center space-x-1"
+    >
+      {status === 'loading' ? (
+        <><Loader2 className="w-3 h-3 animate-spin" /><span>Enviando...</span></>
+      ) : (
+        <><span>⚡</span><span>Postular ahora</span></>
+      )}
+    </button>
   );
 };
 
@@ -811,6 +916,9 @@ const LaborMap = () => {
                       </span>
                     ))}
                   </div>
+                  <div className="mt-3 pt-3 border-t border-gray-700/50" onClick={e => e.stopPropagation()}>
+                    <ApplyButton jobId={job.id} jobTitle={job.title} company={job.company} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -888,6 +996,7 @@ const LaborMap = () => {
                           + Agregar al itinerario
                         </button>
                       )}
+                      <ApplyButton jobId={job.id} jobTitle={job.title} company={job.company} />
                     </div>
                   </Popup>
                 </Marker>
@@ -2104,6 +2213,7 @@ const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) 
     { label: "CVs creados", value: 0 },
     { label: "Entrevistas practicadas", value: 0 },
     { label: "Días activo", value: 0 },
+    { label: "Postulaciones enviadas", value: 0 },
   ];
 
   const actions = [
@@ -2149,7 +2259,7 @@ const Dashboard = ({ setCurrentView }: { setCurrentView: (v: string) => void }) 
       </div>
 
       {/* Stats */}
-      <div className="animate-fadeInUp delay-100 grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      <div className="animate-fadeInUp delay-100 grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
         {stats.map((stat) => (
           <div
             key={stat.label}
@@ -2221,6 +2331,9 @@ export default function App() {
   // Wire auth gate so ChatContext can open the modal when user hits the limit
   useEffect(() => {
     setAuthGateCallback(() => setShowAuth(true));
+    const handler = () => setShowAuth(true);
+    window.addEventListener('nouu:need-auth', handler);
+    return () => window.removeEventListener('nouu:need-auth', handler);
   }, []);
 
   useEffect(() => {
