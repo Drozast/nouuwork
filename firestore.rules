@@ -7,6 +7,13 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    // Nouus (pololos/pegas informales) — lectura pública, escritura auth
+    match /maria_nouus/{nouuId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.addedBy == request.auth.uid;
+    }
+
     // CVs belong to their owner
     match /cvs/{cvId} {
       allow read, write: if request.auth != null && resource.data.uid == request.auth.uid;
@@ -35,6 +42,47 @@ service cloud.firestore {
     match /jobPostings/{postingId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'company';
+    }
+
+    // Applications — postulaciones a Nouus
+    match /applications/{appId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Chats
+    match /chats/{chatId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid in resource.data.participants;
+    }
+    match /chats/{chatId}/messages/{msgId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+
+    // Analytics collections
+    // - Anyone (including anonymous) can write tracking events
+    // - Only admins can read
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email in ['drozast@gmail.com', 'seba.hormero@gmail.com'];
+    }
+
+    match /analytics_pageviews/{docId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    match /analytics_events/{docId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    match /analytics_conversions/{docId} {
+      allow create: if true;
+      allow read: if isAdmin();
     }
   }
 }

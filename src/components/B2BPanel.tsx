@@ -118,7 +118,7 @@ const INITIAL_CANDIDATES: Candidate[] = [
 
 const STATUS_COLORS: Record<CandidateStatus, string> = {
   Nuevo: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  Entrevistado: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  Entrevistado: "bg-[#0f70b7]/10 text-[#0f70b7] border-[#0f70b7]/20",
   Aprobado: "bg-green-500/10 text-green-500 border-green-500/20",
   Rechazado: "bg-red-500/10 text-red-500 border-red-500/20",
 };
@@ -251,43 +251,43 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
           <p className="text-gray-400">Completa los datos para comenzar a publicar empleos y gestionar candidatos</p>
         </div>
 
-        <div className="animate-slideInBlur bg-[#222327] border border-gray-800 rounded-2xl p-8">
+        <div className="animate-slideInBlur bg-[#222222] border border-gray-800 rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nombre de la empresa <span className="text-[#ff5a5f]">*</span></label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Nombre de la empresa <span className="text-[#f83758]">*</span></label>
               <input
                 name="name"
                 required
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Ej: Supermercados La Plaza SpA"
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
               />
             </div>
 
             {/* RUT + Industry */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">RUT empresa <span className="text-[#ff5a5f]">*</span></label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">RUT empresa <span className="text-[#f83758]">*</span></label>
                 <input
                   name="rut"
                   required
                   value={form.rut}
                   onChange={handleChange}
                   placeholder="76.123.456-7"
-                  className={`w-full bg-[#16171a] border rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none transition-colors ${rutError ? "border-red-500/60 focus:border-red-500" : "border-gray-700 focus:border-green-500/50"}`}
+                  className={`w-full bg-[#181818] border rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none transition-colors ${rutError ? "border-red-500/60 focus:border-red-500" : "border-gray-700 focus:border-green-500/50"}`}
                 />
                 {rutError && <p className="mt-1.5 text-xs text-red-400">{rutError}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Industria <span className="text-[#ff5a5f]">*</span></label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Industria <span className="text-[#f83758]">*</span></label>
                 <select
                   name="industry"
                   required
                   value={form.industry}
                   onChange={handleChange}
-                  className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors appearance-none"
+                  className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors appearance-none"
                 >
                   <option value="" disabled>Selecciona una industria</option>
                   {INDUSTRIES.map(ind => (
@@ -307,7 +307,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
                   value={form.email}
                   onChange={handleChange}
                   placeholder="contacto@empresa.cl"
-                  className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                  className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
                 />
               </div>
               <div>
@@ -317,7 +317,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="+56 2 2345 6789"
-                  className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                  className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
                 value={form.address}
                 onChange={handleChange}
                 placeholder="Av. Providencia 1234, Providencia, Santiago"
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors"
               />
             </div>
 
@@ -343,7 +343,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
                 onChange={handleChange}
                 rows={3}
                 placeholder="Breve descripción de tu empresa..."
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors resize-none"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-500/50 transition-colors resize-none"
               />
             </div>
 
@@ -357,7 +357,7 @@ const CreateCompanyForm: React.FC<CreateCompanyFormProps> = ({ onCreated, uid })
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ff5a5f] hover:bg-[#ff444a] disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center space-x-2"
+              className="w-full bg-[#f83758] hover:bg-[#d62847] disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /><span>Creando perfil...</span></>
@@ -423,11 +423,11 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
   return (
     <div className="fixed inset-0 bg-black/70 flex items-end md:items-center justify-center z-50 p-0 md:p-4" onClick={onClose}>
       <div
-        className="bg-[#222327] border border-gray-800 rounded-t-3xl md:rounded-2xl w-full md:max-w-2xl max-h-[92vh] overflow-y-auto animate-slideInBlur"
+        className="bg-[#222222] border border-gray-800 rounded-t-3xl md:rounded-2xl w-full md:max-w-2xl max-h-[92vh] overflow-y-auto animate-slideInBlur"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-[#222327] z-10">
+        <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-[#222222] z-10">
           <div>
             <h2 className="text-lg font-bold text-white">Publicar nuevo empleo</h2>
             <p className="text-gray-400 text-sm">Los candidatos filtrados por IA verán esta oferta</p>
@@ -440,20 +440,20 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Cargo <span className="text-[#ff5a5f]">*</span></label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Cargo <span className="text-[#f83758]">*</span></label>
             <input
               name="title"
               required
               value={form.title}
               onChange={handleChange}
               placeholder="Ej: Cajero/a Part-time"
-              className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors"
+              className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Descripción del cargo <span className="text-[#ff5a5f]">*</span></label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Descripción del cargo <span className="text-[#f83758]">*</span></label>
             <textarea
               name="description"
               required
@@ -461,7 +461,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
               onChange={handleChange}
               rows={4}
               placeholder="Describe las funciones, requisitos y condiciones del cargo..."
-              className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors resize-none"
+              className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors resize-none"
             />
           </div>
 
@@ -474,7 +474,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
                 value={form.salaryMin}
                 onChange={handleChange}
                 placeholder="$400.000"
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors"
               />
             </div>
             <div>
@@ -484,7 +484,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
                 value={form.salaryMax}
                 onChange={handleChange}
                 placeholder="$600.000"
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors"
               />
             </div>
           </div>
@@ -498,7 +498,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
                 value={form.location}
                 onChange={handleChange}
                 placeholder="Providencia, Santiago"
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors"
               />
             </div>
             <div>
@@ -507,7 +507,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
                 name="type"
                 value={form.type}
                 onChange={handleChange}
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors appearance-none"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors appearance-none"
               >
                 {JOB_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -522,12 +522,12 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
               value={form.tags}
               onChange={handleChange}
               placeholder="Atención al cliente, Caja, Turno mañana"
-              className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#ff5a5f]/50 transition-colors"
+              className="w-full bg-[#181818] border border-gray-700 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#f83758]/50 transition-colors"
             />
           </div>
 
           {/* Urgent toggle */}
-          <div className="flex items-center justify-between p-4 bg-[#16171a] border border-gray-800 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-[#181818] border border-gray-800 rounded-xl">
             <div>
               <p className="text-sm font-medium text-white">Contratación urgente</p>
               <p className="text-xs text-gray-500 mt-0.5">Destacará con badge naranja en los resultados</p>
@@ -535,7 +535,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
             <button
               type="button"
               onClick={() => setForm(prev => ({ ...prev, urgent: !prev.urgent }))}
-              className={`transition-colors ${form.urgent ? "text-orange-400" : "text-gray-600"}`}
+              className={`transition-colors ${form.urgent ? "text-[#f83758]" : "text-gray-600"}`}
             >
               {form.urgent ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
             </button>
@@ -553,7 +553,7 @@ const CreateJobForm: React.FC<CreateJobFormProps> = ({ companyId, onSaved, onClo
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-[#ff5a5f] hover:bg-[#ff444a] disabled:opacity-60 text-white py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center space-x-2"
+              className="flex-1 bg-[#f83758] hover:bg-[#d62847] disabled:opacity-60 text-white py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center space-x-2"
             >
               {saving ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /><span>Publicando...</span></>
@@ -590,13 +590,13 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
 }) => (
   <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
     <div
-      className="bg-[#222327] border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto animate-scaleIn"
+      className="bg-[#222222] border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto animate-scaleIn"
       onClick={e => e.stopPropagation()}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-[#222327] z-10">
+      <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-[#222222] z-10">
         <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 bg-[#ff5a5f]/20 text-[#ff5a5f] rounded-full flex items-center justify-center text-xl font-bold">
+          <div className="w-14 h-14 bg-[#f83758]/20 text-[#f83758] rounded-full flex items-center justify-center text-xl font-bold">
             {candidate.name.charAt(0)}
           </div>
           <div>
@@ -620,15 +620,15 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
       <div className="p-6 space-y-6">
         {/* Contact */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center space-x-3 text-sm bg-[#16171a] rounded-xl p-3 border border-gray-800">
+          <div className="flex items-center space-x-3 text-sm bg-[#181818] rounded-xl p-3 border border-gray-800">
             <Mail className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <span className="text-gray-300 truncate">{candidate.email}</span>
           </div>
-          <div className="flex items-center space-x-3 text-sm bg-[#16171a] rounded-xl p-3 border border-gray-800">
+          <div className="flex items-center space-x-3 text-sm bg-[#181818] rounded-xl p-3 border border-gray-800">
             <Phone className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <span className="text-gray-300">{candidate.phone}</span>
           </div>
-          <div className="flex items-center space-x-3 text-sm bg-[#16171a] rounded-xl p-3 border border-gray-800">
+          <div className="flex items-center space-x-3 text-sm bg-[#181818] rounded-xl p-3 border border-gray-800">
             <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <span className="text-gray-300 truncate">{candidate.location}</span>
           </div>
@@ -639,7 +639,7 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
           <h4 className="text-sm font-medium text-gray-400 mb-3">Habilidades</h4>
           <div className="flex flex-wrap gap-2">
             {candidate.tags.map((tag, i) => (
-              <span key={i} className="bg-[#16171a] text-gray-300 text-sm px-3 py-1.5 rounded-full border border-gray-700">
+              <span key={i} className="bg-[#181818] text-gray-300 text-sm px-3 py-1.5 rounded-full border border-gray-700">
                 {tag}
               </span>
             ))}
@@ -651,7 +651,7 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
           <h4 className="text-sm font-medium text-gray-400 mb-2 flex items-center space-x-2">
             <Briefcase className="w-4 h-4" /><span>Experiencia</span>
           </h4>
-          <p className="text-gray-300 text-sm bg-[#16171a] p-4 rounded-xl border border-gray-800 leading-relaxed">
+          <p className="text-gray-300 text-sm bg-[#181818] p-4 rounded-xl border border-gray-800 leading-relaxed">
             {candidate.experience}
           </p>
         </div>
@@ -661,7 +661,7 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
           <h4 className="text-sm font-medium text-gray-400 mb-2 flex items-center space-x-2">
             <GraduationCap className="w-4 h-4" /><span>Educación</span>
           </h4>
-          <p className="text-gray-300 text-sm bg-[#16171a] p-4 rounded-xl border border-gray-800">
+          <p className="text-gray-300 text-sm bg-[#181818] p-4 rounded-xl border border-gray-800">
             {candidate.education}
           </p>
         </div>
@@ -669,19 +669,19 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
         {/* Notes */}
         <div>
           <h4 className="text-sm font-medium text-gray-400 mb-2">Notas</h4>
-          <p className="text-gray-300 text-sm bg-[#16171a] p-4 rounded-xl border border-gray-800">
+          <p className="text-gray-300 text-sm bg-[#181818] p-4 rounded-xl border border-gray-800">
             {candidate.notes}
           </p>
         </div>
 
         {/* AI Summary */}
         {selectedJobTitle && (
-          <div className="bg-[#16171a] border border-gray-800 rounded-xl p-4">
+          <div className="bg-[#181818] border border-gray-800 rounded-xl p-4">
             {aiSummaries[candidate.id] ? (
               <div className="flex items-start space-x-3">
-                <Bot className="w-5 h-5 text-[#ff5a5f] mt-0.5 flex-shrink-0" />
+                <Bot className="w-5 h-5 text-[#f83758] mt-0.5 flex-shrink-0" />
                 <div>
-                  <span className="text-xs text-[#ff5a5f] font-semibold uppercase tracking-wide">Resumen IA</span>
+                  <span className="text-xs text-[#f83758] font-semibold uppercase tracking-wide">Resumen IA</span>
                   <p className="text-sm text-gray-300 mt-1.5 leading-relaxed">{aiSummaries[candidate.id]}</p>
                 </div>
               </div>
@@ -689,7 +689,7 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
               <button
                 onClick={() => onGenerateSummary(candidate, selectedJobTitle)}
                 disabled={loadingSummary === candidate.id}
-                className="flex items-center space-x-2 text-sm text-[#ff5a5f] hover:text-[#ff444a] transition-colors disabled:opacity-50 w-full"
+                className="flex items-center space-x-2 text-sm text-[#f83758] hover:text-[#d62847] transition-colors disabled:opacity-50 w-full"
               >
                 {loadingSummary === candidate.id ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /><span>Generando resumen con IA...</span></>
@@ -712,7 +712,7 @@ const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
                 className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   candidate.status === status
                     ? STATUS_COLORS[status].replace("/10", "/30") + " ring-1 ring-current"
-                    : "bg-[#16171a] text-gray-400 border-gray-700 hover:border-gray-500"
+                    : "bg-[#181818] text-gray-400 border-gray-700 hover:border-gray-500"
                 }`}
               >
                 {status}
@@ -838,7 +838,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Dashboard Header — green glow section */}
-      <div className="bg-gradient-to-r from-[#16171a] via-[#1a1f1a] to-[#16171a] border-b border-gray-800 px-8 py-6 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#181818] via-[#1a1f1a] to-[#181818] border-b border-gray-800 px-8 py-6 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-24 bg-green-500/5 blur-3xl rounded-full" />
         </div>
@@ -868,7 +868,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
               <div className="text-[10px] text-gray-500 uppercase tracking-wide">Activos</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-[#ff5a5f]">{stats.candidates}</div>
+              <div className="text-xl font-bold text-[#f83758]">{stats.candidates}</div>
               <div className="text-[10px] text-gray-500 uppercase tracking-wide">Candidatos</div>
             </div>
             <div className="flex items-center space-x-1.5 bg-gray-800/60 border border-gray-700 px-3 py-1.5 rounded-full">
@@ -881,12 +881,12 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
 
       {/* Tabs */}
       <div className="animate-fadeInLeft px-8 pt-5 pb-0 border-b border-gray-800">
-        <div className="flex space-x-1 bg-[#222327] p-1 rounded-xl w-fit border border-gray-800">
+        <div className="flex space-x-1 bg-[#222222] p-1 rounded-xl w-fit border border-gray-800">
           {(["empresa", "empleos", "candidatos"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? "bg-[#ff5a5f] text-white" : "text-gray-400 hover:text-white"}`}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === tab ? "bg-[#f83758] text-white" : "text-gray-400 hover:text-white"}`}
             >
               {tab === "empresa" ? "Mi Empresa" : tab === "empleos" ? "Empleos" : "Candidatos"}
             </button>
@@ -901,7 +901,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
         {activeTab === "empresa" && (
           <div className="max-w-3xl animate-fadeInUp">
             {editing ? (
-              <form onSubmit={handleSaveEdit} className="bg-[#222327] border border-gray-800 rounded-2xl p-6 space-y-5">
+              <form onSubmit={handleSaveEdit} className="bg-[#222222] border border-gray-800 rounded-2xl p-6 space-y-5">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg font-bold text-white">Editar perfil de empresa</h2>
                   <button type="button" onClick={() => setEditing(false)} className="text-gray-500 hover:text-white transition-colors">
@@ -911,38 +911,38 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">Nombre</label>
-                    <input name="name" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} required className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors" />
+                    <input name="name" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} required className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">RUT</label>
-                    <input name="rut" value={editForm.rut} onChange={e => setEditForm(p => ({ ...p, rut: e.target.value }))} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors" />
+                    <input name="rut" value={editForm.rut} onChange={e => setEditForm(p => ({ ...p, rut: e.target.value }))} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">Industria</label>
-                    <select name="industry" value={editForm.industry} onChange={e => setEditForm(p => ({ ...p, industry: e.target.value }))} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors appearance-none">
+                    <select name="industry" value={editForm.industry} onChange={e => setEditForm(p => ({ ...p, industry: e.target.value }))} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors appearance-none">
                       {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">Email</label>
-                    <input name="email" type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors" />
+                    <input name="email" type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">Teléfono</label>
-                    <input name="phone" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors" />
+                    <input name="phone" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1.5">Dirección</label>
-                    <input name="address" value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors" />
+                    <input name="address" value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">Descripción</label>
-                  <textarea name="description" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={3} className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#ff5a5f]/50 transition-colors resize-none" />
+                  <textarea name="description" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={3} className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-[#f83758]/50 transition-colors resize-none" />
                 </div>
                 <div className="flex space-x-3 pt-2">
                   <button type="button" onClick={() => setEditing(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm font-medium transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 bg-[#ff5a5f] hover:bg-[#ff444a] text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center space-x-2">
+                  <button type="submit" className="flex-1 bg-[#f83758] hover:bg-[#d62847] text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center space-x-2">
                     <CheckCircle2 className="w-4 h-4" /><span>Guardar cambios</span>
                   </button>
                 </div>
@@ -950,7 +950,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
             ) : (
               <>
                 {/* Profile card */}
-                <div className="bg-[#222327] border border-gray-800 rounded-2xl p-6 card-hover mb-6">
+                <div className="bg-[#222222] border border-gray-800 rounded-2xl p-6 card-hover mb-6">
                   <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center space-x-4">
                       <div className="w-14 h-14 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center justify-center">
@@ -1026,7 +1026,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                 </div>
 
                 {/* Plan card */}
-                <div className="bg-[#222327] border border-gray-800 rounded-2xl p-6 flex items-center justify-between">
+                <div className="bg-[#222222] border border-gray-800 rounded-2xl p-6 flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center justify-center">
                       <Star className="w-5 h-5 text-yellow-400" />
@@ -1036,7 +1036,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                       <p className="text-gray-500 text-xs mt-0.5">5 publicaciones · candidatos ilimitados</p>
                     </div>
                   </div>
-                  <button className="flex items-center space-x-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-400 hover:text-yellow-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:border-yellow-500/50">
+                  <button className="flex items-center space-x-2 bg-gradient-to-r from-yellow-500/20 to-[#f83758]/20 border border-yellow-500/30 text-yellow-400 hover:text-yellow-300 px-4 py-2 rounded-xl text-sm font-medium transition-all hover:border-yellow-500/50">
                     <Zap className="w-4 h-4" /><span>Actualizar plan</span>
                   </button>
                 </div>
@@ -1055,7 +1055,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
               </div>
               <button
                 onClick={() => setShowJobForm(true)}
-                className="flex items-center space-x-2 bg-[#ff5a5f] hover:bg-[#ff444a] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                className="flex items-center space-x-2 bg-[#f83758] hover:bg-[#d62847] text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
               >
                 <Plus className="w-4 h-4" /><span>Publicar nuevo empleo</span>
               </button>
@@ -1070,7 +1070,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                 <p className="text-gray-500 text-sm mb-6 max-w-sm">Publica tu primera oferta y conecta con candidatos pre-filtrados por IA</p>
                 <button
                   onClick={() => setShowJobForm(true)}
-                  className="flex items-center space-x-2 bg-[#ff5a5f] hover:bg-[#ff444a] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors"
+                  className="flex items-center space-x-2 bg-[#f83758] hover:bg-[#d62847] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Plus className="w-4 h-4" /><span>Publicar primera oferta</span>
                 </button>
@@ -1078,13 +1078,13 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
             ) : (
               <div className="space-y-4">
                 {jobs.map(job => (
-                  <div key={job.id} className="bg-[#222327] border border-gray-800 rounded-2xl p-6 card-hover">
+                  <div key={job.id} className="bg-[#222222] border border-gray-800 rounded-2xl p-6 card-hover">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-3 flex-wrap gap-y-2">
                           <h3 className="text-white font-semibold">{job.title}</h3>
                           {job.urgent && (
-                            <span className="text-[10px] bg-orange-500/15 text-orange-400 border border-orange-500/25 px-2 py-0.5 rounded-full font-medium uppercase tracking-wide">
+                            <span className="text-[10px] bg-[#f83758]/15 text-[#f83758] border border-[#f83758]/25 px-2 py-0.5 rounded-full font-medium uppercase tracking-wide">
                               Urgente
                             </span>
                           )}
@@ -1105,7 +1105,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                         {job.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {job.tags.map((tag, i) => (
-                              <span key={i} className="text-xs bg-[#16171a] text-gray-400 border border-gray-800 px-2 py-1 rounded-md">
+                              <span key={i} className="text-xs bg-[#181818] text-gray-400 border border-gray-800 px-2 py-1 rounded-md">
                                 {tag}
                               </span>
                             ))}
@@ -1148,10 +1148,10 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
               {[
                 { label: "Total", value: candidates.length, color: "text-white" },
                 { label: "Aprobados", value: candidates.filter(c => c.status === "Aprobado").length, color: "text-green-400" },
-                { label: "Entrevistados", value: candidates.filter(c => c.status === "Entrevistado").length, color: "text-blue-400" },
-                { label: "Score prom.", value: `${Math.round(candidates.reduce((s, c) => s + c.score, 0) / candidates.length)}%`, color: "text-[#ff5a5f]" },
+                { label: "Entrevistados", value: candidates.filter(c => c.status === "Entrevistado").length, color: "text-[#0f70b7]" },
+                { label: "Score prom.", value: `${Math.round(candidates.reduce((s, c) => s + c.score, 0) / candidates.length)}%`, color: "text-[#f83758]" },
               ].map(m => (
-                <div key={m.label} className="card-hover bg-[#222327] border border-gray-800 rounded-xl p-4">
+                <div key={m.label} className="card-hover bg-[#222222] border border-gray-800 rounded-xl p-4">
                   <div className="text-gray-500 text-xs mb-1">{m.label}</div>
                   <div className={`text-2xl font-bold ${m.color}`}>{m.value}</div>
                 </div>
@@ -1166,14 +1166,14 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                   placeholder="Buscar candidato, cargo o habilidad..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#222327] border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
+                  className="w-full bg-[#222222] border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
                 />
                 <Filter className="w-4 h-4 text-gray-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="bg-[#222327] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gray-600 transition-colors appearance-none"
+                className="bg-[#222222] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gray-600 transition-colors appearance-none"
               >
                 <option value="Todos">Todos los estados</option>
                 <option value="Nuevo">Nuevo</option>
@@ -1193,7 +1193,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                 </div>
               ) : (
                 filteredCandidates.map(candidate => (
-                  <div key={candidate.id} className="bg-[#222327] border border-gray-800 rounded-xl p-5 flex items-center justify-between hover:border-gray-700 transition-colors card-hover">
+                  <div key={candidate.id} className="bg-[#222222] border border-gray-800 rounded-xl p-5 flex items-center justify-between hover:border-gray-700 transition-colors card-hover">
                     <div className="flex items-center space-x-4 min-w-0">
                       <div className="w-11 h-11 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 font-bold flex-shrink-0">
                         {candidate.name.charAt(0)}
@@ -1203,7 +1203,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                         <div className="text-xs text-gray-500 mt-0.5">{candidate.role} · {candidate.date}</div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {candidate.tags.slice(0, 3).map((tag, i) => (
-                            <span key={i} className="bg-[#16171a] text-gray-500 text-[11px] px-2 py-0.5 rounded-md border border-gray-800">
+                            <span key={i} className="bg-[#181818] text-gray-500 text-[11px] px-2 py-0.5 rounded-md border border-gray-800">
                               {tag}
                             </span>
                           ))}
@@ -1229,7 +1229,7 @@ const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ company, uid, onCom
                       </select>
                       <button
                         onClick={() => setSelectedCandidate(candidate)}
-                        className="bg-[#ff5a5f] hover:bg-[#ff444a] text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+                        className="bg-[#f83758] hover:bg-[#d62847] text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
                       >
                         Ver detalle
                       </button>
@@ -1294,7 +1294,7 @@ const B2BPanel: React.FC<B2BPanelProps> = ({ onOpenAuth }) => {
   if (loading || !companyChecked) {
     return (
       <div className="flex-1 flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-[#ff5a5f] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#f83758] animate-spin" />
       </div>
     );
   }
@@ -1313,7 +1313,7 @@ const B2BPanel: React.FC<B2BPanelProps> = ({ onOpenAuth }) => {
           </p>
           <button
             onClick={onOpenAuth}
-            className="w-full bg-[#ff5a5f] hover:bg-[#ff444a] text-white py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center space-x-2"
+            className="w-full bg-[#f83758] hover:bg-[#d62847] text-white py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center space-x-2"
           >
             <Building className="w-5 h-5" />
             <span>Iniciar sesión o crear cuenta</span>
@@ -1324,7 +1324,7 @@ const B2BPanel: React.FC<B2BPanelProps> = ({ onOpenAuth }) => {
               { icon: <Bot className="w-5 h-5" />, label: "IA pre-filtra candidatos" },
               { icon: <Users className="w-5 h-5" />, label: "Gestiona postulantes" },
             ].map((f, i) => (
-              <div key={i} className="bg-[#222327] border border-gray-800 rounded-xl p-4 text-gray-500">
+              <div key={i} className="bg-[#222222] border border-gray-800 rounded-xl p-4 text-gray-500">
                 <div className="flex justify-center mb-2">{f.icon}</div>
                 <p className="text-xs">{f.label}</p>
               </div>

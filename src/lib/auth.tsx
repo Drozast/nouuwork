@@ -18,8 +18,22 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
+  phone?: string;
+  photoURL?: string;
+  bio?: string;
+  location?: string;
+  rut?: string;
   role: UserRole;
+  accountType?: 'individual' | 'business';
+  companyId?: string;
   createdAt: any;
+  subscription?: {
+    plan: 'free' | 'premium';
+    startDate: string;
+    endDate: string;
+    status: 'active' | 'expired' | 'cancelled';
+    discountCode?: string;
+  } | null;
 }
 
 interface AuthContextType {
@@ -45,7 +59,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const ref = doc(db, 'users', uid);
     const snap = await getDoc(ref);
     if (snap.exists()) {
-      setProfile(snap.data() as UserProfile);
+      const data = snap.data();
+      const profileData: UserProfile = {
+        uid: data.uid || uid,
+        email: data.email || '',
+        displayName: data.displayName || '',
+        phone: data.phone || '',
+        photoURL: data.photoURL || data.photoBase64 || '',
+        bio: data.bio || '',
+        location: data.location || '',
+        rut: data.rut || '',
+        role: data.role || 'worker',
+        accountType: data.accountType || 'individual',
+        companyId: data.companyId || null,
+        createdAt: data.createdAt,
+      };
+      // Fetch subscription status from API
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        if (token) {
+          const API_BASE = import.meta.env.VITE_API_URL || '';
+          const subRes = await fetch(`${API_BASE}/api/subscription`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (subRes.ok) {
+            const subData = await subRes.json();
+            profileData.subscription = subData.subscription;
+          }
+        }
+      } catch { /* ignore subscription fetch errors */ }
+      setProfile(profileData);
     }
   };
 
@@ -66,17 +109,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const ref = doc(db, 'users', u.uid);
     const existing = await getDoc(ref);
     if (!existing.exists()) {
-      const data: UserProfile = {
+      const data: any = {
         uid: u.uid,
         email: u.email!,
         displayName: name || u.displayName || '',
         role,
+        accountType: role === 'company' ? 'business' : 'individual',
         createdAt: serverTimestamp(),
+        profileCompletionScore: 25, // email + name
       };
       await setDoc(ref, data);
-      setProfile(data);
+      setProfile({ uid: u.uid, email: u.email!, displayName: data.displayName, role, accountType: role === 'company' ? 'business' : 'individual', createdAt: new Date() });
     } else {
-      setProfile(existing.data() as UserProfile);
+      const d = existing.data();
+      setProfile({
+        uid: d.uid || u.uid,
+        email: d.email || u.email!,
+        displayName: d.displayName || '',
+        phone: d.phone || '',
+        photoURL: d.photoURL || d.photoBase64 || '',
+        bio: d.bio || '',
+        location: d.location || '',
+        rut: d.rut || '',
+        role: d.role || 'worker',
+        accountType: d.accountType || 'individual',
+        createdAt: d.createdAt,
+      });
     }
   };
 
@@ -92,8 +150,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const loginWithGoogle = async (role: UserRole) => {
-    const cred = await signInWithPopup(auth, googleProvider);
-    await createProfile(cred.user, role);
+    const result = await signInWithPopup(auth, googleProvider);
+    await createProfile(result.user, role);
   };
 
   const logout = async () => {

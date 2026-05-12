@@ -27,6 +27,9 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
       } else {
         await register(email, password, name, role);
       }
+      if (role === 'company') {
+        sessionStorage.setItem('nouu_show_company_setup', 'true');
+      }
       onClose();
     } catch (err: any) {
       const msg = err.code === 'auth/invalid-credential' ? 'Email o contraseña incorrectos'
@@ -45,16 +48,21 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
     try {
       await loginWithGoogle(role);
       onClose();
-    } catch {
-      setError('Error al iniciar con Google. Intenta de nuevo.');
-    } finally {
+    } catch (err: any) {
+      console.error('[Google Login Error]', err?.code, err?.message);
+      const msg = err?.code === 'auth/operation-not-allowed'
+        ? 'El login con Google no está habilitado en este proyecto. Actívalo en Firebase Console → Authentication → Sign-in method.'
+        : err?.code === 'auth/unauthorized-domain'
+        ? `Este dominio no está autorizado para login con Google. Agrega "${window.location.hostname}" en Firebase Console → Authentication → Settings → Authorized domains.`
+        : err?.message || 'Error al iniciar con Google. Intenta de nuevo.';
+      setError(msg);
       setLoading(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1e1f23] border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-[#1f1f1f] border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
           <NouuLogo className="text-xl" />
@@ -65,12 +73,12 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
 
         <div className="p-6 space-y-5">
           {/* Mode toggle */}
-          <div className="flex bg-[#16171a] rounded-xl p-1">
+          <div className="flex bg-[#181818] rounded-xl p-1">
             {(['login', 'register'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setError(''); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${mode === m ? 'bg-[#ff5a5f] text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${mode === m ? 'bg-[#f83758] text-white' : 'text-gray-400 hover:text-white'}`}
               >
                 {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
               </button>
@@ -84,14 +92,14 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setRole('worker')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${role === 'worker' ? 'border-[#ff5a5f] bg-[#ff5a5f]/10 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${role === 'worker' ? 'border-[#f83758] bg-[#f83758]/10 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
                 >
                   <User className="w-6 h-6" />
                   <span className="text-sm font-medium">Busco trabajo</span>
                 </button>
                 <button
                   onClick={() => setRole('company')}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${role === 'company' ? 'border-[#ff5a5f] bg-[#ff5a5f]/10 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors ${role === 'company' ? 'border-[#f83758] bg-[#f83758]/10 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
                 >
                   <Briefcase className="w-6 h-6" />
                   <span className="text-sm font-medium">Soy empresa</span>
@@ -130,7 +138,7 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff5a5f] transition-colors"
+                className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#f83758] transition-colors"
               />
             )}
             <input
@@ -139,7 +147,7 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff5a5f] transition-colors"
+              className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#f83758] transition-colors"
             />
             <input
               type="password"
@@ -147,7 +155,7 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-[#16171a] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ff5a5f] transition-colors"
+              className="w-full bg-[#181818] border border-gray-700 rounded-xl py-2.5 px-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#f83758] transition-colors"
             />
 
             {error && (
@@ -157,7 +165,7 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ff5a5f] hover:bg-[#ff444a] text-white py-2.5 rounded-xl font-medium text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-[#f83758] hover:bg-[#d62847] text-white py-2.5 rounded-xl font-medium text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
@@ -166,9 +174,9 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
 
           <p className="text-center text-xs text-gray-500">
             Al continuar aceptas nuestros{' '}
-            <a href="/terminos" className="text-[#ff5a5f] hover:underline">Términos de uso</a>
+            <a href="/terminos" className="text-[#f83758] hover:underline">Términos de uso</a>
             {' '}y{' '}
-            <a href="/privacidad" className="text-[#ff5a5f] hover:underline">Política de privacidad</a>
+            <a href="/privacidad" className="text-[#f83758] hover:underline">Política de privacidad</a>
           </p>
         </div>
       </div>

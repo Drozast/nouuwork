@@ -56,6 +56,8 @@ export const createInterviewChatSession = (topic: string) =>
 export const createMapChatSession = (jobsContext: string) =>
   createSession('map', jobsContext);
 
+export const createPostJobChatSession = () => createSession('post_job');
+
 export const extractCVData = async (chatHistory: string): Promise<Record<string, string>> => {
   const headers = await getHeaders();
   const res = await fetch(`${API_BASE}/api/extract-cv`, {
